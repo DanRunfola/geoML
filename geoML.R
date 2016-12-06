@@ -553,14 +553,21 @@ geoML <- function(dta,
   
   csv.str <- tempfile(fileext=".csv")
   write.csv(tree.dta, csv.str)
+  write.csv(tree.dta, "/home/aiddata/Desktop/Github/geoML/CSV_test.csv")
   
   c.vars.pass = paste(ctrl.vars, collapse=",")
   sys.call.str <- paste("python", python.path, csv.str, c.vars.pass, outcome[1], "transProp", 
                         paste(out_path,file.prefix,"_rf.csv",sep=""), tree.cnt) 
+  print(sys.call.str)
   tree.resp <- system(sys.call.str, intern=TRUE)
   purity <- tail(tree.resp, n=1)
-  #p.A <- sub("[","")
-  print(purity)
+  #p.A <- sub("[","", purity)
+  #p.B <- sub("(", "", p.A)
+  #p.C <- sub("'","", p.B)
+  #p.D <- sub(")","", p.C)
+  #p.E <- sub("]","", p.D)
+  #pur.out <- strsplit(p.E, ",")
+  #print(pur.out)
 
   
   #============================================================
