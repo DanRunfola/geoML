@@ -39,6 +39,7 @@ library(rpart)
 library(rpart.plot)
 library(Rcpp)
 library(stargazer)
+library(matrixStats)
 #library(doBy)
 sourceCpp("/home/aiddata/Desktop/Github/GEF_MFA/Analyses/split.cpp")
 
@@ -185,8 +186,7 @@ geoML <- function(dta,
 
   exec_str = paste("matchit(",trt[1], "~", paste(ctrl.vars, collapse="+"),
                    ",data=na.omit(sub.dta),caliper=",caliper,")",sep="")
-  
-  print(exec_str)
+
   
   m.ret <- eval(parse(text=exec_str))
   sub.dta$propensity <- predict(m.ret$model, newdata=sub.dta, type="response")
@@ -499,7 +499,7 @@ geoML <- function(dta,
   #============================================================
   #Map of predicted results from Causal Tree (prefix_map_estimate.png)
   sub.dta$tree.pred <- predict(final.tree, newdata=sub.dta)
-
+  
   trt.dta <- sub.dta[sub.dta[trt[1]] == 1,]
 
   lonlat <- trt.dta[c(geog.fields[2], geog.fields[1])]
@@ -509,24 +509,22 @@ geoML <- function(dta,
 
   if(col.invert == TRUE)
   {
-  p <- spplot(spdf, "tree.pred", cex=0.4,
+  p <- spplot(spdf, zcol="tree.pred", cex=0.4,
               cuts=5,
-              col.regions=terrain.colors(6, alpha=1),
+              col.regions=terrain.colors(5, alpha=1),
               xlim=c(-180,180),
               ylim=c(-60,90),
-              pch=c(2,5),
               main=list(label=paste("Impact of Treatment (",trt[2],")", sep="")
                         ,cex=0.5),
               sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
   }
   else
   {
-    p <- spplot(spdf, "tree.pred", cex=0.4,
+    p <- spplot(spdf, zcol="tree.pred", cex=0.4,
                 cuts=5,
-                col.regions=rev(terrain.colors(6, alpha=1)),
+                col.regions=rev(terrain.colors(5, alpha=1)),
                 xlim=c(-180,180),
                 ylim=c(-60,90),
-                pch=c(2,5),
                 main=list(label=paste("Impact of Treatment (",trt[2],")", sep="")
                           ,cex=0.5),
                 sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
@@ -553,27 +551,115 @@ geoML <- function(dta,
   
   csv.str <- tempfile(fileext=".csv")
   write.csv(tree.dta, csv.str)
-  write.csv(tree.dta, "/home/aiddata/Desktop/Github/geoML/CSV_test.csv")
   
   c.vars.pass = paste(ctrl.vars, collapse=",")
   sys.call.str <- paste("python", python.path, csv.str, c.vars.pass, outcome[1], "transProp", 
                         paste(out_path,file.prefix,"_rf.csv",sep=""), tree.cnt) 
-  print(sys.call.str)
-  tree.resp <- system(sys.call.str, intern=TRUE)
-  purity <- tail(tree.resp, n=1)
-  #p.A <- sub("[","", purity)
-  #p.B <- sub("(", "", p.A)
-  #p.C <- sub("'","", p.B)
-  #p.D <- sub(")","", p.C)
-  #p.E <- sub("]","", p.D)
-  #pur.out <- strsplit(p.E, ",")
-  #print(pur.out)
 
+  tree.resp <- system(sys.call.str, intern=TRUE)
+  #CSV is written in the python script in the above line.
   
   #============================================================
   #============================================================
   #Figure of most important variables in RF (prefix_purity.png)  
-  #============================================================
-  #============================================================
-  #Map of uncertainty ("% of observations within 1 standard deviation of the mean") from RF (prefix_rfUnc.png)
-}
+  purity <- tail(tree.resp, n=1)
+  p.A <- gsub("\\[|\\]","", purity)
+  p.B <- gsub("\\(", "", p.A)
+  p.C <- gsub("'","", p.B)
+  p.D <- gsub("\\)", "", p.C)
+  pur.out <- strsplit(gsub(" ","",p.D), ",")
+  df.len <- length(pur.out[[1]]) / 2
+  purity.df <- data.frame(var=1:df.len, purity=1:df.len, col=1:df.len)
+  
+  
+  for(i in 1:df.len)
+  {
+
+    purity.df[1][i,] <- ctrl.names[match(as.character(pur.out[[1]][(2 * i - 1)]), ctrl.vars)]
+    purity.df[2][i,] <- as.character(pur.out[[1]][2 * i])
+    
+    #Calculate vector of bar colors based on the initial CT.
+    het.id <- match(paste("treatment:",as.character(pur.out[[1]][(2 * i - 1)]),sep=""), 
+          names(het.model$coefficients))
+    
+    if(!is.na(het.id))
+    {
+      if(col.invert == FALSE)
+      {
+        if(het.model$coefficients[het.id][[1]] > 0)
+        {
+          purity.df[3][i,] <- "green"
+        }
+        if(het.model$coefficients[het.id][[1]] < 0)
+        {
+          purity.df[3][i,] <- "red"
+        }
+      }
+      else
+      {
+        if(het.model$coefficients[het.id][[1]] > 0)
+        {
+          purity.df[3][i,] <- "red"
+        }
+        if(het.model$coefficients[het.id][[1]] < 0)
+        {
+          purity.df[3][i,] <- "green"
+        }
+      }
+      if(het.model$coefficients[het.id][[1]] == 0)
+      {
+        purity.df[3][i,] <- "black"
+      }
+    }
+    else
+    {
+      purity.df[3][i,] <- colors()[309]
+    }
+
+  }
+  
+  
+ 
+  
+  png(paste(out_path,file.prefix,"_purity.png",sep=""),
+      width = 6, 
+      height = 4, 
+      units = 'in', 
+      res = 300)
+  par(mai=c(1,2,1,1))
+  barplot(height=as.numeric(purity.df["purity"][[1]]), 
+          names.arg=purity.df["var"][[1]], horiz=TRUE, 
+          cex.names=0.5, las=2, xlab="Tree Purity Contribution",
+          cex.axis = 0.6,
+          col=purity.df["col"][[1]])
+  dev.off()
+
+  #Map of uncertainty ("% of observations within 1 standard deviation of the mean") from RF (prefix_rf_unc.png)
+  rf.res <- read.csv(paste(out_path,file.prefix,"_rf.csv",sep=""), header=FALSE)
+  tree.dta$unc <- colSds(as.matrix(rf.res)) * 1.96
+  tree.dtaB <- tree.dta[tree.dta[trt[1]] == 1,]
+  lonlat <- tree.dtaB[,c(geog.fields[2], geog.fields[1])]
+  spdf <- SpatialPointsDataFrame(coords = lonlat, data = tree.dtaB,
+                                 proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
+  
+  
+
+  p <- spplot(spdf, "unc", cex=0.4,
+              cuts=5,
+              col.regions=rev(heat.colors(6, alpha=1)),
+              xlim=c(-180,180),
+              ylim=c(-60,90),
+              main=list(label="Uncertainty in Estimates (+/- @ 95% Confidence Interval)"
+                        ,cex=0.5),
+              sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
+  
+  png(paste(out_path,file.prefix,"_map_uncertainty.png",sep=""),
+      width = 6, 
+      height = 4, 
+      units = 'in', 
+      res = 300)
+  print(p)
+  dev.off()
+  
+  return(trt.dta)
+  }

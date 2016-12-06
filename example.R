@@ -32,7 +32,6 @@ VarNames <- c("Dist. to Rivers (m)", "Dist. to Roads (m)",
 
 out_path = "/home/aiddata/Desktop/Github/geoML/output/"
 
-source("/home/aiddata/Desktop/Github/geoML/geoML.R")
 t <- geoML(dta=full.dta, 
          trt=c("treatment", "GEF MFA Projects"), 
          ctrl=c(Vars, VarNames), 
