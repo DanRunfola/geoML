@@ -16,16 +16,16 @@ Vars <-  c("dist_to_all_rivers.na.mean", "dist_to_roads.na.mean",
            "v4composites_calibrated.2002.mean",
            "ltdr_yearly_ndvi_mean.2002.mean")
 
-VarNames <- c("Distance to Rivers (m)", "Distance to Roads (m)",
-              "Elevation(m)", "Slope (°)",
-              "Urban Travel Distance (relative)", "Population Density (2000)",
+VarNames <- c("Dist. to Rivers (m)", "Dist. to Roads (m)",
+              "Elevation (m)", "Slope (degrees)",
+              "Urb. Dist. (rel)", "Pop. Density (2000)",
               "Protected Area %", "Treecover (2000, %)", "Latitude",
-              "Longitude", "Maximum Precipitation (2002, mm)", 
-              "Minimum Precipitation (2002, mm)", 
-              "Mean Precipitation (2002, mm)",
-              "Maximum Temperature (2002, C)", 
-              "Minimum Temperature (2002, C)", 
-              "Mean Temperature (2002, C)",
+              "Longitude", "Max Precip. (2002, mm)", 
+              "Min Precip (2002, mm)", 
+              "Mean Precip (2002, mm)",
+              "Max Temp (2002, C)", 
+              "Min Temp (2002, C)", 
+              "Mean Temp (2002, C)",
               "Nightime Lights (2002, Relative)",
               "NDVI (2002, Unitless)"                       
 )
@@ -43,5 +43,8 @@ t <- geoML(dta=full.dta,
                 "accessibility_map.na.mean","srtm_slope_500m.na.mean"),
          geog.fields = c("latitude", "longitude"),
          caliper=0.5,
-         counterfactual.name = "Land Degradation"
+         counterfactual.name = "Land Degradation",
+         tree.ctrl = c(20,10),
+         col.invert = FALSE,
+         tree.cnt = 10
 )
