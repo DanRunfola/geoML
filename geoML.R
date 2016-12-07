@@ -142,11 +142,11 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer table of descriptive statistics (prefix_desc.html)
-  stargazer(sub.dta, 
+  stargazer(sub.dta[sub.dta[trt[1]] == 1,], 
             type="html", 
             median=TRUE, 
             digits=2, 
-            title=paste("Descriptive Statistics: ",trt[2]," (Treated), ",counterfactual.name, " (Control)", sep=""),
+            title=paste("Descriptive Statistics for ",trt[2]," (Treated)", sep=""),
             covariate.labels = labels,
             out = paste(pth,file.prefix,"_desc.html",sep="")
   )
