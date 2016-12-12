@@ -137,20 +137,65 @@ geoML <- function(dta,
   
   sub.dta <- dta[c(ctrl.vars, trt[1], outcome[1])]
   
-  labels <- c(ctrl.names, trt[2], outcome[2])
+  lab.ids <- sapply(sub.dta, is.numeric)
+  
+  sub.dta.desc <- sub.dta[ , lab.ids]
+  
+  for(k in 1:length(names(sub.dta.desc)))
+  {
+    
+    id <- ctrl.names[match(names(sub.dta.desc)[k],ctrl.vars)]
+    if(names(sub.dta.desc)[k] == trt[1])
+    {
+      id = trt[2]
+    }
+    if(names(sub.dta.desc)[k] == outcome[1])
+    {
+      id = outcome[2]
+    }
+    
+    if(k == 1)
+    {
+      if(!is.na(id))
+      {
+        labels <- id
+      }
+      else
+      {
+        labels <- names(sub.dta.desc)[k]
+      }
+    }
+    else
+    {
+      if(!is.na(id))
+      {
+        labels <- c(labels, id)
+      }
+      else
+      {
+        labels <- c(labels,names(sub.dta.desc)[k])
+      }
+    }
+  }
+  
+  
+
   
   #============================================================
   #============================================================
   #Stargazer table of descriptive statistics (prefix_desc.html)
-  stargazer(sub.dta[sub.dta[trt[1]] == 1,], 
+  len_o <- 1:length(names(sub.dta.desc))
+  stargazer(sub.dta.desc[sub.dta.desc[trt[1]] == 1,], 
             type="html", 
             median=TRUE, 
             digits=2, 
             title=paste("Descriptive Statistics for ",trt[2]," (Treated)", sep=""),
             covariate.labels = labels,
+            omit.summary.stat=c("n"),
+            order=len_o,
             out = paste(pth,file.prefix,"_desc.html",sep="")
   )
-  
+
   
   #============================================================
   #============================================================
@@ -231,12 +276,43 @@ geoML <- function(dta,
   #============================================================
   #============================================================ 
   #Stargazer table for propensity linear model (prefix_propensityModel.html)
+
+  for(k in 2:length(m.ret$model$coefficients))
+  {
+
+        id <- ctrl.names[match(names(m.ret$model$coefficients[k]),ctrl.vars)]
+    
+  if(k == 2)
+      {
+        if(!is.na(id))
+          {
+            prop.labels <- id
+          }
+        else
+          {
+            prop.labels <- names(m.ret$model$coefficients[k])
+          }
+      }
+  else
+      {
+        if(!is.na(id))
+        {
+            prop.labels <- c(prop.labels, id)
+        }
+          else
+        {
+          prop.labels <- c(prop.labels, names(m.ret$model$coefficients[k]))
+        }
+      }
+  }
+  
+
   stargazer(m.ret$model, 
             type="html", 
             median=TRUE, 
             digits=2, 
             title=paste("Propensity Model: ",trt[2]," (Treated), ",counterfactual.name, " (Control)", sep=""),
-            covariate.labels = ctrl.names,
+            covariate.labels = prop.labels,
             font.size="small",
             no.space=TRUE,
             omit.stat=c("LL","ser","f"),
@@ -289,8 +365,22 @@ geoML <- function(dta,
   #Stargazer table of balance statistics (prefix_balancestats.html)
   
   s.rm <- summary(m.ret)$reduction
-
-  row.names(s.rm) <- c("Propensity Score", ctrl.names)
+  row.names(s.rm)[1] <- "Propensity Score"
+  for(k in 2:length(row.names(s.rm)))
+  {
+    
+    id <- ctrl.names[match(row.names(s.rm)[k],ctrl.vars)]
+      if(!is.na(id))
+      {
+        row.names(s.rm)[k] <- id
+      }
+      else
+      {
+        row.names(s.rm)[k] <- row.names(s.rm)[k]
+      }
+  }
+  
+  
   stargazer(s.rm, 
             type="html", 
             title="Percent Balance Improvement:",
@@ -463,7 +553,7 @@ geoML <- function(dta,
                varlen=0,fallen.leaves=FALSE)
   }
   
-  title(paste("Causal Tree: ",trt[2]," (Treated), ",counterfactual.name, " (Control)", sep=""), cex.main=0.75)
+  #title(paste("Causal Tree: ",trt[2]," (Treated), ",counterfactual.name, " (Control)", sep=""), cex.main=0.75)
   dev.off()
   
   #============================================================
@@ -477,9 +567,46 @@ geoML <- function(dta,
   }
 
   lm.exec <- paste(lm.exec, ",data=match.data(m.ret))")
-
+  
+  
   het.model <- eval(parse(text=lm.exec))
-  all.lab <- c("Treatment", ctrl.names, het.lab[2:length(het.lab)])
+  v.rec.add <- paste("treatment:", var.rec, sep="")
+  for(k in 2:length(het.model$coefficients))
+  {
+    
+    id <- ctrl.names[match(names(het.model$coefficients[k]),ctrl.vars)]
+    
+    if(is.na(id))
+    {
+     id <- het.lab[match(names(het.model$coefficients[k]),v.rec.add)]
+    }
+    
+    if(k == 2)
+    {
+      if(!is.na(id))
+      {
+        all.lab <- id
+      }
+      else
+      {
+        all.lab <- names(het.model$coefficients[k])
+      }
+    }
+    else
+    {
+      if(!is.na(id))
+      {
+        all.lab <- c(all.lab, id)
+      }
+      else
+      {
+        all.lab <- c(all.lab, names(het.model$coefficients[k]))
+      }
+    }
+  }
+  
+  print(all.lab)
+  #all.lab <- c("Treatment", ctrl.names, het.lab[2:length(het.lab)])
 
   stargazer(het.model, 
             type="html", 
@@ -499,6 +626,9 @@ geoML <- function(dta,
   #============================================================
   #Map of predicted results from Causal Tree (prefix_map_estimate.png)
   sub.dta$tree.pred <- predict(final.tree, newdata=sub.dta)
+  
+  print("SUMMARY STATISTICS OF TREE PREDICTION:")
+  print(summary(sub.dta$tree.pred))
   
   trt.dta <- sub.dta[sub.dta[trt[1]] == 1,]
 
@@ -550,9 +680,14 @@ geoML <- function(dta,
   python.path <- "/home/aiddata/Desktop/Github/CausalForest/CF.py"
   
   csv.str <- tempfile(fileext=".csv")
-  write.csv(tree.dta, csv.str)
+  nums <- sapply(tree.dta, is.numeric)
+
+  rf.tree.dta <- tree.dta[ , nums]
+  rf.tree.dta <- rf.tree.dta[complete.cases(rf.tree.dta),]
+  print(summary(rf.tree.dta))
+  write.csv(rf.tree.dta, csv.str)
   
-  c.vars.pass = paste(ctrl.vars, collapse=",")
+  c.vars.pass = paste(ctrl.vars[ctrl.vars %in% names(rf.tree.dta)], collapse=",")
   sys.call.str <- paste("python", python.path, csv.str, c.vars.pass, outcome[1], "transProp", 
                         paste(out_path,file.prefix,"_rf.csv",sep=""), tree.cnt) 
 
@@ -620,26 +755,29 @@ geoML <- function(dta,
   
   
  
-  
-  png(paste(out_path,file.prefix,"_purity.png",sep=""),
-      width = 6, 
-      height = 4, 
-      units = 'in', 
-      res = 300)
-  par(mai=c(1,2,1,1))
-  barplot(height=as.numeric(purity.df["purity"][[1]]), 
-          names.arg=purity.df["var"][[1]], horiz=TRUE, 
-          cex.names=0.5, las=2, xlab="Tree Purity Contribution",
-          cex.axis = 0.6,
-          col=purity.df["col"][[1]])
-  dev.off()
+  ##==========================
+  ##Purity calculations are temporarily disabled
+  #Jianing is looking into SciKit errors.
+  # png(paste(out_path,file.prefix,"_purity.png",sep=""),
+  #     width = 6, 
+  #     height = 4, 
+  #     units = 'in', 
+  #     res = 300)
+  # par(mai=c(1,2,1,1))
+  # barplot(height=as.numeric(purity.df["purity"][[1]]), 
+  #         names.arg=purity.df["var"][[1]], horiz=TRUE, 
+  #         cex.names=0.5, las=2, xlab="Tree Purity Contribution",
+  #         cex.axis = 0.6,
+  #         xlim=c(0,max(as.numeric(purity.df["purity"][[1]]))),
+  #         col=purity.df["col"][[1]])
+  # dev.off()
 
   #Map of uncertainty ("% of observations within 1 standard deviation of the mean") from RF (prefix_rf_unc.png)
   rf.res <- read.csv(paste(out_path,file.prefix,"_rf.csv",sep=""), header=FALSE)
-  tree.dta$unc <- colSds(as.matrix(rf.res)) * 1.96
-  tree.dtaB <- tree.dta[tree.dta[trt[1]] == 1,]
-  lonlat <- tree.dtaB[,c(geog.fields[2], geog.fields[1])]
-  spdf <- SpatialPointsDataFrame(coords = lonlat, data = tree.dtaB,
+  rf.tree.dta$unc <- colSds(as.matrix(rf.res)) * 1.96
+  rf.tree.dtaB <- rf.tree.dta[rf.tree.dta[trt[1]] == 1,]
+  lonlat <- rf.tree.dtaB[,c(geog.fields[2], geog.fields[1])]
+  spdf <- SpatialPointsDataFrame(coords = lonlat, data = rf.tree.dtaB,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
   
   
