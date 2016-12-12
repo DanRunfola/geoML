@@ -1,5 +1,5 @@
 #Generalized Implementation of Propensity Matching, CT, RF, and MatchIt Linear Models
-#Inputs: 
+#Inputs:
 #Required:
 #Dataset
 #List of Control Variables
@@ -7,7 +7,7 @@
 #Single Treatment Variable
 #Folder for output
 #Prefix for file outputs
-#Optional: 
+#Optional:
 #four key variables for balance plotting (list)
 #geog.fields = alternative columns for latitude and longitude.
 
@@ -41,19 +41,19 @@ library(Rcpp)
 library(stargazer)
 library(matrixStats)
 #library(doBy)
-sourceCpp("/home/aiddata/Desktop/Github/GEF_MFA/Analyses/split.cpp")
+sourceCpp("/path/to/git/for/geoML/split.cpp")
 
 #============================================================
 #============================================================
 #Helper Functions
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   require(grid)
-  
+
   # Make a list from the ... arguments and plotlist
   plots <- c(list(...), plotlist)
-  
+
   numPlots = length(plots)
-  
+
   # If layout is NULL, then use 'cols' to determine layout
   if (is.null(layout)) {
     # Make the panel
@@ -62,20 +62,20 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
                      ncol = cols, nrow = ceiling(numPlots/cols))
   }
-  
+
   if (numPlots==1) {
     print(plots[[1]])
-    
+
   } else {
     # Set up the page
     grid.newpage()
     pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
+
     # Make each plot, in the correct location
     for (i in 1:numPlots) {
       # Get the i,j matrix positions of the regions that contain this subplot
       matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
+
       print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
                                       layout.pos.col = matchidx$col))
     }
@@ -116,15 +116,15 @@ ctinit <- function(y, offset, parms, wt) {
 #============================================================
 #============================================================
 #Main Function
-geoML <- function(dta, 
-                  trt, 
-                  ctrl, 
-                  outcome, 
-                  pth, 
-                  file.prefix, 
-                  kvar, 
-                  geog.fields = c("latitude", "longitude"), 
-                  caliper=0.5, 
+geoML <- function(dta,
+                  trt,
+                  ctrl,
+                  outcome,
+                  pth,
+                  file.prefix,
+                  kvar,
+                  geog.fields = c("latitude", "longitude"),
+                  caliper=0.5,
                   counterfactual.name="Control",
                   tree.ctrl = c(5,10),
                   tree.cnt = 1000,
@@ -134,16 +134,16 @@ geoML <- function(dta,
   cvar.lim <- ceiling(length(ctrl) / 2)
   ctrl.vars <- ctrl[1:cvar.lim]
   ctrl.names <- ctrl[(ceiling(length(ctrl) / 2)+1):length(ctrl)]
-  
+
   sub.dta <- dta[c(ctrl.vars, trt[1], outcome[1])]
-  
+
   lab.ids <- sapply(sub.dta, is.numeric)
-  
+
   sub.dta.desc <- sub.dta[ , lab.ids]
-  
+
   for(k in 1:length(names(sub.dta.desc)))
   {
-    
+
     id <- ctrl.names[match(names(sub.dta.desc)[k],ctrl.vars)]
     if(names(sub.dta.desc)[k] == trt[1])
     {
@@ -153,7 +153,7 @@ geoML <- function(dta,
     {
       id = outcome[2]
     }
-    
+
     if(k == 1)
     {
       if(!is.na(id))
@@ -177,18 +177,18 @@ geoML <- function(dta,
       }
     }
   }
-  
-  
 
-  
+
+
+
   #============================================================
   #============================================================
   #Stargazer table of descriptive statistics (prefix_desc.html)
   len_o <- 1:length(names(sub.dta.desc))
-  stargazer(sub.dta.desc[sub.dta.desc[trt[1]] == 1,], 
-            type="html", 
-            median=TRUE, 
-            digits=2, 
+  stargazer(sub.dta.desc[sub.dta.desc[trt[1]] == 1,],
+            type="html",
+            median=TRUE,
+            digits=2,
             title=paste("Descriptive Statistics for ",trt[2]," (Treated)", sep=""),
             covariate.labels = labels,
             omit.summary.stat=c("n"),
@@ -196,7 +196,7 @@ geoML <- function(dta,
             out = paste(pth,file.prefix,"_desc.html",sep="")
   )
 
-  
+
   #============================================================
   #============================================================
   #Map of all locations (prefix_map.png)
@@ -218,13 +218,13 @@ geoML <- function(dta,
   p$legend$bottom$args$key$text[[1]][1] <- counterfactual.name
   p$legend$bottom$args$key$text[[1]][2] <- trt[2]
   png(paste(out_path,file.prefix,"_map.png",sep=""),
-      width = 6, 
-      height = 4, 
-      units = 'in', 
+      width = 6,
+      height = 4,
+      units = 'in',
       res = 300)
   print(p)
   dev.off()
-  
+
   #============================================================
   #============================================================
   #Run MatchIt
@@ -232,56 +232,56 @@ geoML <- function(dta,
   exec_str = paste("matchit(",trt[1], "~", paste(ctrl.vars, collapse="+"),
                    ",data=na.omit(sub.dta),caliper=",caliper,")",sep="")
 
-  
+
   m.ret <- eval(parse(text=exec_str))
   sub.dta$propensity <- predict(m.ret$model, newdata=sub.dta, type="response")
-  
+
   #============================================================
   #============================================================
   #Pre-balance plot - propensity score and four key variables (first four in list taken otherwise; prefix_prebalance.png)
   plot.dta <- sub.dta
   plot.dta$Type <- counterfactual.name
   plot.dta[plot.dta[trt[1]] == 1,]["Type"] <- trt[2]
-  
-  a0 <- ggplot(data=plot.dta, aes(x=propensity,fill=Type)) + 
-    geom_histogram(binwidth=.05, alpha=.5, position="identity")+ 
-    ggtitle("Pre-Balance Metrics") + 
+
+  a0 <- ggplot(data=plot.dta, aes(x=propensity,fill=Type)) +
+    geom_histogram(binwidth=.05, alpha=.5, position="identity")+
+    ggtitle("Pre-Balance Metrics") +
     theme(legend.position="bottom") + xlab("Propensity Scores")+
     labs(fill="")
-  
-  a1 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[1]],fill=Type)) + 
-    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+ 
+
+  a1 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[1]],fill=Type)) +
+    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[1],ctrl.vars)])
-  
-  a2 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[2]],fill=Type)) +  
-    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+ 
+
+  a2 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[2]],fill=Type)) +
+    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[2],ctrl.vars)])
-  
-  a3 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[3]],fill=Type))+ 
-    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+ 
+
+  a3 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[3]],fill=Type))+
+    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[3],ctrl.vars)])
-  
-  a4 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[4]],fill=Type)) + 
-    geom_histogram(binwidth=NULL, alpha=.5, position="identity") + 
+
+  a4 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[4]],fill=Type)) +
+    geom_histogram(binwidth=NULL, alpha=.5, position="identity") +
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[4],ctrl.vars)])
-  
+
   png(paste(out_path,file.prefix,"_prebalance.png",sep=""),
-      width = 7, 
-      height = 6, 
-      units = 'in', 
+      width = 7,
+      height = 6,
+      units = 'in',
       res = 300)
   multiplot(a0,a1, a2, a3, a4, layout=matrix(c(1,1,2,3,4,5), nrow=3, byrow=TRUE))
   dev.off()
-  
+
   #============================================================
-  #============================================================ 
+  #============================================================
   #Stargazer table for propensity linear model (prefix_propensityModel.html)
 
   for(k in 2:length(m.ret$model$coefficients))
   {
 
         id <- ctrl.names[match(names(m.ret$model$coefficients[k]),ctrl.vars)]
-    
+
   if(k == 2)
       {
         if(!is.na(id))
@@ -305,12 +305,12 @@ geoML <- function(dta,
         }
       }
   }
-  
 
-  stargazer(m.ret$model, 
-            type="html", 
-            median=TRUE, 
-            digits=2, 
+
+  stargazer(m.ret$model,
+            type="html",
+            median=TRUE,
+            digits=2,
             title=paste("Propensity Model: ",trt[2]," (Treated), ",counterfactual.name, " (Control)", sep=""),
             covariate.labels = prop.labels,
             font.size="small",
@@ -320,55 +320,55 @@ geoML <- function(dta,
             ci=TRUE, ci.level=0.95,
             out = paste(pth,file.prefix,"_propensityModel.html",sep="")
   )
-  
+
   #============================================================
   #============================================================
   #Post-balance plot - propensity score and four key variables (first four in list taken otherwise; prefix_postbalance.png)
   plot.dta <- match.data(m.ret)
   plot.dta$Type <- counterfactual.name
   plot.dta[plot.dta[trt[1]] == 1,]["Type"] <- trt[2]
-  
-  a0 <- ggplot(data=plot.dta, aes(x=distance,fill=Type)) + 
-    geom_histogram(binwidth=.05, alpha=.5, position="identity")+ 
-    ggtitle("Post-Balance Metrics") + 
+
+  a0 <- ggplot(data=plot.dta, aes(x=distance,fill=Type)) +
+    geom_histogram(binwidth=.05, alpha=.5, position="identity")+
+    ggtitle("Post-Balance Metrics") +
     theme(legend.position="bottom") + xlab("Propensity Scores")+
     labs(fill="")
-  
-  a1 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[1]],fill=Type)) + 
-    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+ 
+
+  a1 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[1]],fill=Type)) +
+    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[1],ctrl.vars)])
-  
-  a2 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[2]],fill=Type)) +  
-    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+ 
+
+  a2 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[2]],fill=Type)) +
+    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[2],ctrl.vars)])
-  
-  a3 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[3]],fill=Type))+ 
-    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+ 
+
+  a3 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[3]],fill=Type))+
+    geom_histogram(binwidth=NULL, alpha=.5, position="identity")+
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[3],ctrl.vars)])
-  
-  a4 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[4]],fill=Type)) + 
-    geom_histogram(binwidth=NULL, alpha=.5, position="identity") + 
+
+  a4 <- ggplot(data=plot.dta, aes(x=plot.dta[kvar[4]],fill=Type)) +
+    geom_histogram(binwidth=NULL, alpha=.5, position="identity") +
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[4],ctrl.vars)])
-  
+
   png(paste(out_path,file.prefix,"_postbalance.png",sep=""),
-      width = 7, 
-      height = 6, 
-      units = 'in', 
+      width = 7,
+      height = 6,
+      units = 'in',
       res = 300)
   multiplot(a0,a1, a2, a3, a4, layout=matrix(c(1,1,2,3,4,5), nrow=3, byrow=TRUE))
   dev.off()
-  
-  
-  
+
+
+
   #============================================================
   #============================================================
   #Stargazer table of balance statistics (prefix_balancestats.html)
-  
+
   s.rm <- summary(m.ret)$reduction
   row.names(s.rm)[1] <- "Propensity Score"
   for(k in 2:length(row.names(s.rm)))
   {
-    
+
     id <- ctrl.names[match(row.names(s.rm)[k],ctrl.vars)]
       if(!is.na(id))
       {
@@ -379,26 +379,26 @@ geoML <- function(dta,
         row.names(s.rm)[k] <- row.names(s.rm)[k]
       }
   }
-  
-  
-  stargazer(s.rm, 
-            type="html", 
+
+
+  stargazer(s.rm,
+            type="html",
             title="Percent Balance Improvement:",
             dep.var.labels.include = TRUE,
             summary=FALSE,
             out = paste(pth,file.prefix,"_balancestats.html",sep="")
   )
-  
-  
+
+
   #============================================================
   #============================================================
   #Causal Tree results (prefix_ct.png)
   #Edit 0 and 1 propensity cases
   sub.dta$ML.prop <- sub.dta$propensity
-  
+
   for(i in 1:length(sub.dta['ML.prop']))
   {
-    
+
     if(sub.dta['ML.prop'][i] >= 0.99)
     {
       sub.dta['ML.prop'][i] = 0.99
@@ -408,7 +408,7 @@ geoML <- function(dta,
       sub.dta['ML.prop'][i] = .01
     }
   }
-  
+
   #Tree propensity calculations
   transOutcome <- list(rep(0,nrow(sub.dta)))
   trans.rf.prop <- list(rep(0,nrow(sub.dta)))
@@ -418,21 +418,21 @@ geoML <- function(dta,
     if(sub.dta[trt[1]][[1]][i] == 1)
     {
       #Treated
-      transOutcome[i] = sub.dta[outcome[1]][[1]][i] * 
+      transOutcome[i] = sub.dta[outcome[1]][[1]][i] *
         (1 / sub.dta$ML.prop[i])
       trans.rf.prop[i] = sub.dta["ML.prop"][[1]][i]
     }
     else
     {
       #Untreated
-      transOutcome[i] = -1 * (sub.dta[outcome[1]][[1]][i] * 
+      transOutcome[i] = -1 * (sub.dta[outcome[1]][[1]][i] *
                                 ((1-0) / (1 - sub.dta$ML.prop[i])))
       trans.rf.prop[i] = sub.dta["ML.prop"][[1]][i] * -1
     }
   }
   sub.dta$transOutcome <- unlist(transOutcome)
   sub.dta$transProp <- unlist(trans.rf.prop)
-  
+
   #------------------
   #------------------
   #CT
@@ -447,13 +447,13 @@ geoML <- function(dta,
   crxvdata$id <- sample(1:k, nrow(crxvdata), replace = TRUE)
   list = 1:k
   m.split = tree.ctrl[1]
-  
+
   errset = list()
-  
+
   for (i in 1:k){
     errset[[i]] = list()
     trainingset <- subset(crxvdata, id %in% list[-i])
-    
+
     tree.exec <- paste("sub.fit = rpart(cbind(",
                        outcome[1],",",
                        trt[1],",ML.prop,transOutcome)~",
@@ -468,7 +468,7 @@ geoML <- function(dta,
     for(l in 1:length(removed_nodes)){
       error = 0
       sub.fit.pred = snip.rpart(sub.fit, removed_nodes[1:l])
-      
+
       #Subset Fit
       testset <- subset(crxvdata, id %in% c(i))
       pt = predict(sub.fit.pred,testset,type = "matrix")
@@ -476,12 +476,12 @@ geoML <- function(dta,
       val = data.matrix(y)
       idx = as.numeric(rownames(testset))
       dbidx = as.numeric(rownames(dbb))
-      
+
       for(pid in 1:(dim(y)[1])){
         id = match(idx[pid],dbidx)
         error = error + (dbb$transOutcome[id] - val[pid])^2
       }
-      
+
       if(error == 0){
         errset[[i]][l] = 1000000
       }
@@ -490,36 +490,36 @@ geoML <- function(dta,
       }
     }
   }
-  
+
   #Identify the average error to depth ratio across all cross-validations
   avg.index <- vector()
   for(e in 1:length(errset))
   {
     avg.index[e] <- which.min(errset[[e]])
   }
-  
+
   #---------------
   #Build Final Tree
   #---------------
-  
+
   final.tree.exec <- paste("sub.fit = rpart(cbind(",
                      outcome[1],",",
                      trt[1],",ML.prop,transOutcome)~",
                      paste(ctrl.vars, collapse="+"),
                      ",crxvdata, control=rpart.control(cp = 0,minsplit = m.split),method=alist)", sep="")
-  
+
   fit1 <- sub.fit <- eval(parse(text=final.tree.exec))
 
   fit = data.matrix(fit1$frame)
   index = as.numeric(rownames(fit1$frame))
-  
-  
+
+
   removed_nodes = 0
   removed_nodes = cross_validate(fit, index,removed_nodes)
   removed_nodes = removed_nodes[-1]
   pruned_nodes = removed_nodes[1:round(mean(avg.index))]
   final.tree <- snip.rpart(fit1, pruned_nodes)
-  
+
   print.tree <- final.tree
   var.rec <- ""
   het.lab <- ""
@@ -532,11 +532,11 @@ geoML <- function(dta,
       levels(print.tree$frame$var)[i] <- ctrl.names[match(levels(print.tree$frame$var)[i],ctrl.vars)]
     }
   }
-  
+
   png(paste(out_path,file.prefix,"_ct.png",sep=""),
-      width = 7, 
-      height = 4, 
-      units = 'in', 
+      width = 7,
+      height = 4,
+      units = 'in',
       res = 600)
   if(col.invert == TRUE)
   {
@@ -552,10 +552,10 @@ geoML <- function(dta,
                faclen=0,
                varlen=0,fallen.leaves=FALSE)
   }
-  
+
   #title(paste("Causal Tree: ",trt[2]," (Treated), ",counterfactual.name, " (Control)", sep=""), cex.main=0.75)
   dev.off()
-  
+
   #============================================================
   #============================================================
   #Stargazer of linear model using matched cases and interactions identified in Causal Tree (prefix_linearMatch.html)
@@ -567,20 +567,20 @@ geoML <- function(dta,
   }
 
   lm.exec <- paste(lm.exec, ",data=match.data(m.ret))")
-  
-  
+
+
   het.model <- eval(parse(text=lm.exec))
   v.rec.add <- paste("treatment:", var.rec, sep="")
   for(k in 2:length(het.model$coefficients))
   {
-    
+
     id <- ctrl.names[match(names(het.model$coefficients[k]),ctrl.vars)]
-    
+
     if(is.na(id))
     {
      id <- het.lab[match(names(het.model$coefficients[k]),v.rec.add)]
     }
-    
+
     if(k == 2)
     {
       if(!is.na(id))
@@ -604,14 +604,14 @@ geoML <- function(dta,
       }
     }
   }
-  
+
   print(all.lab)
   #all.lab <- c("Treatment", ctrl.names, het.lab[2:length(het.lab)])
 
-  stargazer(het.model, 
-            type="html", 
-            median=TRUE, 
-            digits=2, 
+  stargazer(het.model,
+            type="html",
+            median=TRUE,
+            digits=2,
             title=paste("Matched Model: ",trt[2]," (Treated), ",counterfactual.name, " (Control)", sep=""),
             covariate.labels = all.lab,
             font.size="small",
@@ -626,14 +626,14 @@ geoML <- function(dta,
   #============================================================
   #Map of predicted results from Causal Tree (prefix_map_estimate.png)
   sub.dta$tree.pred <- predict(final.tree, newdata=sub.dta)
-  
+
   print("SUMMARY STATISTICS OF TREE PREDICTION:")
   print(summary(sub.dta$tree.pred))
-  
+
   trt.dta <- sub.dta[sub.dta[trt[1]] == 1,]
 
   lonlat <- trt.dta[c(geog.fields[2], geog.fields[1])]
-  
+
   spdf <- SpatialPointsDataFrame(coords = lonlat, data = trt.dta,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
 
@@ -660,25 +660,25 @@ geoML <- function(dta,
                 sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
   }
   png(paste(out_path,file.prefix,"_map_estimate.png",sep=""),
-      width = 6, 
-      height = 4, 
-      units = 'in', 
+      width = 6,
+      height = 4,
+      units = 'in',
       res = 300)
   print(p)
   dev.off()
-  
-  
+
+
   #============================================================
   #============================================================
   #CSV of predicted results from Causal Tree and relevant covariates (prefix_prediction.csv)
   write.csv(trt.dta, paste(out_path,file.prefix,"_prediction.csv",sep=""))
-  
-  
+
+
   #============================================================
   #============================================================
   #Random Forest results (prefix_rf.csv)
   python.path <- "/home/aiddata/Desktop/Github/CausalForest/CF.py"
-  
+
   csv.str <- tempfile(fileext=".csv")
   nums <- sapply(tree.dta, is.numeric)
 
@@ -686,17 +686,17 @@ geoML <- function(dta,
   rf.tree.dta <- rf.tree.dta[complete.cases(rf.tree.dta),]
   print(summary(rf.tree.dta))
   write.csv(rf.tree.dta, csv.str)
-  
+
   c.vars.pass = paste(ctrl.vars[ctrl.vars %in% names(rf.tree.dta)], collapse=",")
-  sys.call.str <- paste("python", python.path, csv.str, c.vars.pass, outcome[1], "transProp", 
-                        paste(out_path,file.prefix,"_rf.csv",sep=""), tree.cnt) 
+  sys.call.str <- paste("python", python.path, csv.str, c.vars.pass, outcome[1], "transProp",
+                        paste(out_path,file.prefix,"_rf.csv",sep=""), tree.cnt)
 
   tree.resp <- system(sys.call.str, intern=TRUE)
   #CSV is written in the python script in the above line.
-  
+
   #============================================================
   #============================================================
-  #Figure of most important variables in RF (prefix_purity.png)  
+  #Figure of most important variables in RF (prefix_purity.png)
   purity <- tail(tree.resp, n=1)
   p.A <- gsub("\\[|\\]","", purity)
   p.B <- gsub("\\(", "", p.A)
@@ -705,18 +705,18 @@ geoML <- function(dta,
   pur.out <- strsplit(gsub(" ","",p.D), ",")
   df.len <- length(pur.out[[1]]) / 2
   purity.df <- data.frame(var=1:df.len, purity=1:df.len, col=1:df.len)
-  
-  
+
+
   for(i in 1:df.len)
   {
 
     purity.df[1][i,] <- ctrl.names[match(as.character(pur.out[[1]][(2 * i - 1)]), ctrl.vars)]
     purity.df[2][i,] <- as.character(pur.out[[1]][2 * i])
-    
+
     #Calculate vector of bar colors based on the initial CT.
-    het.id <- match(paste("treatment:",as.character(pur.out[[1]][(2 * i - 1)]),sep=""), 
+    het.id <- match(paste("treatment:",as.character(pur.out[[1]][(2 * i - 1)]),sep=""),
           names(het.model$coefficients))
-    
+
     if(!is.na(het.id))
     {
       if(col.invert == FALSE)
@@ -752,20 +752,20 @@ geoML <- function(dta,
     }
 
   }
-  
-  
- 
+
+
+
   ##==========================
   ##Purity calculations are temporarily disabled
   #Jianing is looking into SciKit errors.
   # png(paste(out_path,file.prefix,"_purity.png",sep=""),
-  #     width = 6, 
-  #     height = 4, 
-  #     units = 'in', 
+  #     width = 6,
+  #     height = 4,
+  #     units = 'in',
   #     res = 300)
   # par(mai=c(1,2,1,1))
-  # barplot(height=as.numeric(purity.df["purity"][[1]]), 
-  #         names.arg=purity.df["var"][[1]], horiz=TRUE, 
+  # barplot(height=as.numeric(purity.df["purity"][[1]]),
+  #         names.arg=purity.df["var"][[1]], horiz=TRUE,
   #         cex.names=0.5, las=2, xlab="Tree Purity Contribution",
   #         cex.axis = 0.6,
   #         xlim=c(0,max(as.numeric(purity.df["purity"][[1]]))),
@@ -779,8 +779,8 @@ geoML <- function(dta,
   lonlat <- rf.tree.dtaB[,c(geog.fields[2], geog.fields[1])]
   spdf <- SpatialPointsDataFrame(coords = lonlat, data = rf.tree.dtaB,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
-  
-  
+
+
 
   p <- spplot(spdf, "unc", cex=0.4,
               cuts=5,
@@ -790,14 +790,14 @@ geoML <- function(dta,
               main=list(label="Uncertainty in Estimates (+/- @ 95% Confidence Interval)"
                         ,cex=0.5),
               sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
-  
+
   png(paste(out_path,file.prefix,"_map_uncertainty.png",sep=""),
-      width = 6, 
-      height = 4, 
-      units = 'in', 
+      width = 6,
+      height = 4,
+      units = 'in',
       res = 300)
   print(p)
   dev.off()
-  
+
   return(trt.dta)
   }
