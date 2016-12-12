@@ -210,7 +210,15 @@ geoML <- function(dta,
   lonlat <- sub.dta[,c(geog.fields[2], geog.fields[1])]
   spdf <- SpatialPointsDataFrame(coords = lonlat, data = sub.dta,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
-  land.mask <- readOGR("data/countries.geojson", "OGRGeoJSON")
+
+
+  if (Sys.getenv("USER") == "vagrant") {
+    land.mask <- readOGR("/vagrant/run/geoML/data/countries.geojson", "OGRGeoJSON")
+  } else {
+    land.mask <- readOGR("data/countries.geojson", "OGRGeoJSON")
+  }
+
+
   p <- spplot(spdf, zcol=trt[1], cex=0.25,
               cuts=2,
               at=0.5,
@@ -684,7 +692,12 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Random Forest results (prefix_rf.csv)
-  python.path <- "/home/aiddata/Desktop/Github/CausalForest/CF.py"
+  if (Sys.getenv("USER") == "vagrant") {
+    python.path <- "/vagrant/CF.py"
+  } else {
+    python.path <- "/home/aiddata/Desktop/Github/CausalForest/CF.py"
+  }
+
 
   csv.str <- tempfile(fileext=".csv")
   nums <- sapply(tree.dta, is.numeric)
