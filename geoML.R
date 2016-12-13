@@ -200,7 +200,7 @@ geoML <- function(dta,
             covariate.labels = labels,
             omit.summary.stat=c("n"),
             order=len_o,
-            out = paste(out_pth,file.prefix,"_desc.html",sep="")
+            out = paste(out_path,file.prefix,"_desc.html",sep="")
   )
 
 
@@ -333,7 +333,7 @@ geoML <- function(dta,
             omit.stat=c("LL","ser","f"),
             single.row=TRUE,
             ci=TRUE, ci.level=0.95,
-            out = paste(out_pth,file.prefix,"_propensityModel.html",sep="")
+            out = paste(out_path,file.prefix,"_propensityModel.html",sep="")
   )
 
   #============================================================
@@ -401,7 +401,7 @@ geoML <- function(dta,
             title="Percent Balance Improvement:",
             dep.var.labels.include = TRUE,
             summary=FALSE,
-            out = paste(out_pth,file.prefix,"_balancestats.html",sep="")
+            out = paste(out_path,file.prefix,"_balancestats.html",sep="")
   )
 
 
@@ -635,7 +635,7 @@ geoML <- function(dta,
             single.row=TRUE,
             ci=TRUE, ci.level=0.95,
             dep.var.labels = outcome[2],
-            out = paste(out_pth,file.prefix,"_linearMatch.html",sep="")
+            out = paste(out_path,file.prefix,"_linearMatch.html",sep="")
   )
   #============================================================
   #============================================================
