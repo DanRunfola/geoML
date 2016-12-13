@@ -213,7 +213,7 @@ geoML <- function(dta,
 
 
   if (Sys.getenv("USER") == "vagrant") {
-    land.mask <- readOGR("/vagrant/run/geoML/data/countries.geojson", "OGRGeoJSON")
+    land.mask <- readOGR("/home/vagrant/geoML/data/countries.geojson", "OGRGeoJSON")
   } else {
     land.mask <- readOGR("data/countries.geojson", "OGRGeoJSON")
   }
@@ -693,7 +693,7 @@ geoML <- function(dta,
   #============================================================
   #Random Forest results (prefix_rf.csv)
   if (Sys.getenv("USER") == "vagrant") {
-    python.path <- "/vagrant/CF.py"
+    python.path <- "/home/vagrant/CausalForest/CF.py"
   } else {
     python.path <- "/home/aiddata/Desktop/Github/CausalForest/CF.py"
   }
