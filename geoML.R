@@ -641,9 +641,19 @@ geoML <- function(dta,
   #============================================================
   #Map of predicted results from Causal Tree (prefix_map_estimate.png)
   sub.dta$tree.pred <- predict(final.tree, newdata=sub.dta)
-
+  
+  out = paste(out_path,file.prefix,"_summary_estimates.html",sep="")
+  
   print("SUMMARY STATISTICS OF TREE PREDICTION:")
   print(summary(sub.dta$tree.pred))
+  
+  write(summary(sub.dta$tree.pred), file = out,
+        append = TRUE)
+  
+  write(paste("T dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 1,])), file = out,
+        append = TRUE)
+  write(paste("C dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 0,])), file = out,
+        append = TRUE)
 
   trt.dta <- sub.dta[sub.dta[trt[1]] == 1,]
 
