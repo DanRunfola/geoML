@@ -130,6 +130,7 @@ geoML <- function(dta,
                   out_path,
                   file.prefix,
                   kvar,
+                  top.rep,
                   geog.fields = c("latitude", "longitude"),
                   caliper=0.5,
                   counterfactual.name="Control",
@@ -143,6 +144,8 @@ geoML <- function(dta,
   ctrl.names <- ctrl[(ceiling(length(ctrl) / 2)+1):length(ctrl)]
 
   sub.dta <- dta[c(ctrl.vars, trt[1], outcome[1])]
+  
+  ret.vec.dta <- dta[top.rep]
 
   lab.ids <- sapply(sub.dta, is.numeric)
 
@@ -641,11 +644,28 @@ geoML <- function(dta,
   #============================================================
   #Map of predicted results from Causal Tree (prefix_map_estimate.png)
   sub.dta$tree.pred <- predict(final.tree, newdata=sub.dta)
-
+  
+  out = paste(out_path,file.prefix,"_summary_estimates.html",sep="")
+  
   print("SUMMARY STATISTICS OF TREE PREDICTION:")
   print(summary(sub.dta$tree.pred))
+  
+  
+  write(summary(sub.dta$tree.pred), file = out,
+        append = TRUE)
+  
+  write(paste("T dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 1,])), file = out,
+        append = TRUE)
+  write(paste("C dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 0,])), file = out,
+        append = TRUE)
 
+  
+  sub.dta <- cbind(sub.dta, ret.vec.dta)
+  
+
+  
   trt.dta <- sub.dta[sub.dta[trt[1]] == 1,]
+
 
   lonlat <- trt.dta[c(geog.fields[2], geog.fields[1])]
 
@@ -687,6 +707,12 @@ geoML <- function(dta,
   #============================================================
   #CSV of predicted results from Causal Tree and relevant covariates (prefix_prediction.csv)
   write.csv(trt.dta, paste(out_path,file.prefix,"_prediction.csv",sep=""))
+  
+  #Biggset and smallest
+  ret.trt.dta <- trt.dta[trt.dta$tree.pred == max(trt.dta$tree.pred) | 
+                           trt.dta$tree.pred == min(trt.dta$tree.pred),]
+  
+  write.csv(ret.trt.dta, paste(out_path, file.prefix, "_BW.csv", sep=""))
 
 
   #============================================================
