@@ -200,6 +200,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer table of descriptive statistics (prefix_desc.html)
+  desc.out = paste(out_path,file.prefix,"_desc.html",sep="")
   len_o <- 1:length(names(sub.dta.desc))
   stargazer(sub.dta.desc[sub.dta.desc[trt[1]] == 1,],
             type="html",
@@ -211,11 +212,13 @@ geoML <- function(dta,
             order=len_o,
             out = paste(out_path,file.prefix,"_desc.html",sep="")
   )
+  
 
 
   #============================================================
   #============================================================
   #Map of all locations (prefix_map.png)
+  map.all.out <- paste(out_path,file.prefix,"_map.png",sep="")
   lonlat <- sub.dta[,c(geog.fields[2], geog.fields[1])]
   spdf <- SpatialPointsDataFrame(coords = lonlat, data = sub.dta,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
@@ -264,6 +267,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Pre-balance plot - propensity score and four key variables (first four in list taken otherwise; prefix_prebalance.png)
+  pre.balance.path <- paste(out_path,file.prefix,"_prebalance.png",sep="")
   plot.dta <- sub.dta
   plot.dta$Type <- counterfactual.name
   plot.dta[plot.dta[trt[1]] == 1,]["Type"] <- trt[2]
@@ -304,6 +308,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer table for propensity linear model (prefix_propensityModel.html)
+  prop.model.out <- paste(out_path,file.prefix,"_propensityModel.html",sep="")
 
   for(k in 2:length(m.ret$model$coefficients))
   {
@@ -353,6 +358,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Post-balance plot - propensity score and four key variables (first four in list taken otherwise; prefix_postbalance.png)
+  post.balance.outpath <- paste(out_path,file.prefix,"_postbalance.png",sep="")
   plot.dta <- match.data(m.ret)
   plot.dta$Type <- counterfactual.name
   plot.dta[plot.dta[trt[1]] == 1,]["Type"] <- trt[2]
@@ -392,7 +398,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer table of balance statistics (prefix_balancestats.html)
-
+  balance.stats.out <- paste(out_path,file.prefix,"_balancestats.html",sep="")
   s.rm <- summary(m.ret)$reduction
   row.names(s.rm)[1] <- "Propensity Score"
   for(k in 2:length(row.names(s.rm)))
@@ -539,7 +545,7 @@ geoML <- function(dta,
   #---------------
   #Build Final Tree
   #---------------
-
+  ct.png.out <- paste(out_path,file.prefix,"_ct.png",sep="")
   final.tree.exec <- paste("sub.fit = rpart(cbind(",
                      outcome[1],",",
                      trt[1],",ML.prop,transOutcome)~",
@@ -597,6 +603,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer of linear model using matched cases and interactions identified in Causal Tree (prefix_linearMatch.html)
+  linear.het.out <- paste(out_path,file.prefix,"_linearMatch.html",sep="")
   lm.exec <- paste("lm(",outcome[1],"~",trt[1],"+",paste(ctrl.vars, collapse="+"), sep="")
 
   if(length(var.rec) > 1)
@@ -715,6 +722,7 @@ geoML <- function(dta,
                           ,cex=0.5),
                 sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
   }
+  map.est.out <- paste(out_path,file.prefix,"_map_estimate.png",sep="")
   png(paste(out_path,file.prefix,"_map_estimate.png",sep=""),
       width = 6,
       height = 4,
@@ -734,7 +742,7 @@ geoML <- function(dta,
                            trt.dta$tree.pred == min(trt.dta$tree.pred),]
   
   write.csv(ret.trt.dta, paste(out_path, file.prefix, "_BW.csv", sep=""))
-
+  best.worst.out <- paste(out_path, file.prefix, "_BW.csv", sep="")
 
   #============================================================
   #============================================================
@@ -859,6 +867,7 @@ geoML <- function(dta,
                         ,cex=0.5),
               sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
 
+  uncertainty.map.out <- paste(out_path,file.prefix,"_map_uncertainty.png",sep="")
   png(paste(out_path,file.prefix,"_map_uncertainty.png",sep=""),
       width = 6,
       height = 4,
@@ -868,6 +877,7 @@ geoML <- function(dta,
   dev.off()
 
 ##Produce histogram of uncertainty, with a red line marking the CT result.
+  hist.out <- paste(out_path,file.prefix,"_uncertHist.png", sep="")
   rf.means <- rowMeans(rf.res)
   mean.rf.est <- mean(rf.means)
   png(paste(out_path,file.prefix,"_uncertHist.png", sep=""),
@@ -883,4 +893,20 @@ fill=c("red","blue"), bty="n")
 dev.off()
 
   return(trt.dta)
+
+#out.sum #Text file containing N for Control and Treatment cases
+#hist.out #Histogram of estimate / overall summary
+#best.worst.out #<- CSV of best and worst projects
+#desc.out #Descriptive Stats
+#map.all.out #Map of all locations
+#prop.model.out #Propensity model
+#pre.balance.path #Pre balance figure
+#post.balance.outpath #Post-balance figure
+#balance.stats.out #Balance summary table
+#ct.png.out #Causal Tree Figure
+#linear.het.out #Linear model with het effects table
+#map.est.out #Map of Estimates
+#uncertainty.map.out #Map of uncertainty
+
+
   }
