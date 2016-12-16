@@ -936,7 +936,7 @@ dev.off()
       },
       add = function(text, newLine=TRUE) {
         n <- ''
-        if (newLines == TRUE) {
+        if (newLine == TRUE) {
           n <- '\n'
         }
 
@@ -951,7 +951,7 @@ dev.off()
   }
   html$add('\n')
 
-  html$add(paste('<img src="', hist.out, '">', sep=""))
+  html$add(paste('<img src="', basename(hist.out), '">', sep=""))
 
 
   for (i in readLines(desc.out)) {
@@ -960,30 +960,30 @@ dev.off()
   html$add('\n')
 
 
-  html$add(paste('<img src="', map.all.out, '">', sep=""))
+  html$add(paste('<img src="', basename(map.all.out), '">', sep=""))
 
   for (i in readLines(prop.model.out)) {
     html$add(i, newLine=FALSE)
   }
 
-  html$add(paste('<img src="', pre.balance.path, '">', sep=""))
-  html$add(paste('<img src="', post.balance.path, '">', sep=""))
+  html$add(paste('<img src="', basename(pre.balance.path), '">', sep=""))
+  html$add(paste('<img src="', basename(post.balance.outpath), '">', sep=""))
 
   for (i in readLines(balance.stats.out)) {
     html$add(i, newLine=FALSE)
   }
   html$add('\n')
 
-  html$add(paste('<img src="', ct.png.out, '">', sep=""))
+  html$add(paste('<img src="', basename(ct.png.out), '">', sep=""))
 
   for (i in readLines(linear.het.out)) {
     html$add(i, newLine=FALSE)
   }
   html$add('\n')
 
-  html$add(paste('<img src="', map.est.out, '">', sep=""))
+  html$add(paste('<img src="', basename(map.est.out), '">', sep=""))
 
-  html$add(paste('<img src="', uncertainty.map.out, '">', sep=""))
+  html$add(paste('<img src="', basename(uncertainty.map.out), '">', sep=""))
 
   html_out <- html$complete()
 
