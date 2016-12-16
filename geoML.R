@@ -150,7 +150,7 @@ geoML <- function(dta,
   ctrl.names <- ctrl[(ceiling(length(ctrl) / 2)+1):length(ctrl)]
 
   sub.dta <- dta[c(ctrl.vars, trt[1], outcome[1])]
-  
+
   ret.vec.dta <- dta[top.rep]
 
   lab.ids <- sapply(sub.dta, is.numeric)
@@ -212,7 +212,7 @@ geoML <- function(dta,
             order=len_o,
             out = paste(out_path,file.prefix,"_desc.html",sep="")
   )
-  
+
 
 
   #============================================================
@@ -354,7 +354,7 @@ geoML <- function(dta,
             out = paste(out_path,file.prefix,"_propensityModel.html",sep="")
   )
 
- 
+
   #============================================================
   #============================================================
   #Post-balance plot - propensity score and four key variables (first four in list taken otherwise; prefix_postbalance.png)
@@ -477,8 +477,8 @@ geoML <- function(dta,
   match.ids <- m.ret$match.matrix[!is.na(m.ret$match.matrix)]
   match.ids <- c(match.ids, names(m.ret$match.matrix[!is.na(m.ret$match.matrix),]))
 
-  tree.dta <- tree.dta[match.ids,]	
-  
+  tree.dta <- tree.dta[match.ids,]
+
   alist <- list(eval=ctev, split=ctsplit, init=ctinit)
   dbb = tree.dta
   k = tree.ctrl[2]
@@ -505,7 +505,7 @@ geoML <- function(dta,
     removed_nodes = 0
     removed_nodes = cross_validate(sub.fit.dm, index,removed_nodes)
     removed_nodes = removed_nodes[-1]
- 
+
     for(l in 1:length(removed_nodes)){
       error = 0
       sub.fit.pred = snip.rpart(sub.fit, removed_nodes[1:l])
@@ -518,7 +518,7 @@ geoML <- function(dta,
       idx = as.numeric(rownames(testset))
       dbidx = as.numeric(rownames(dbb))
 
-	  
+
       for(pid in 1:(dim(y)[1])){
         id = match(idx[pid],dbidx)
         error = error + (dbb$transOutcome[id] - val[pid])^2
@@ -673,12 +673,12 @@ geoML <- function(dta,
   #============================================================
   #Map of predicted results from Causal Tree (prefix_map_estimate.png)
   sub.dta$tree.pred <- predict(final.tree, newdata=sub.dta)
-  
+
   out.sum = paste(out_path,file.prefix,"_summary_estimates.txt",sep="")
-  
+
   print("SUMMARY STATISTICS OF TREE PREDICTION:")
   print(summary(sub.dta$tree.pred))
-  
+
   write("\nTreatment Cases:", file=out.sum, append=TRUE)
   write(paste("T dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 1,])[1]), file = out.sum,
         append = TRUE)
@@ -689,9 +689,9 @@ geoML <- function(dta,
   ct.mean.est <- summary(sub.dta$tree.pred)[4]
 
   sub.dta <- cbind(sub.dta, ret.vec.dta)
-  
 
-  
+
+
   trt.dta <- sub.dta[sub.dta[trt[1]] == 1,]
 
 
@@ -736,11 +736,11 @@ geoML <- function(dta,
   #============================================================
   #CSV of predicted results from Causal Tree and relevant covariates (prefix_prediction.csv)
   write.csv(trt.dta, paste(out_path,file.prefix,"_prediction.csv",sep=""))
-  
+
   #Biggset and smallest
-  ret.trt.dta <- trt.dta[trt.dta$tree.pred == max(trt.dta$tree.pred) | 
+  ret.trt.dta <- trt.dta[trt.dta$tree.pred == max(trt.dta$tree.pred) |
                            trt.dta$tree.pred == min(trt.dta$tree.pred),]
-  
+
   write.csv(ret.trt.dta, paste(out_path, file.prefix, "_BW.csv", sep=""))
   best.worst.out <- paste(out_path, file.prefix, "_BW.csv", sep="")
 
@@ -894,19 +894,105 @@ dev.off()
 
   return(trt.dta)
 
-#out.sum #Text file containing N for Control and Treatment cases
-#hist.out #Histogram of estimate / overall summary
-#best.worst.out #<- CSV of best and worst projects
-#desc.out #Descriptive Stats
-#map.all.out #Map of all locations
-#prop.model.out #Propensity model
-#pre.balance.path #Pre balance figure
-#post.balance.outpath #Post-balance figure
-#balance.stats.out #Balance summary table
-#ct.png.out #Causal Tree Figure
-#linear.het.out #Linear model with het effects table
-#map.est.out #Map of Estimates
-#uncertainty.map.out #Map of uncertainty
+
+
+# out.sum              # txt  - Text file containing N for Control and Treatment cases
+# hist.out             # png  - Histogram of estimate / overall summary
+# best.worst.out       # csv  - CSV of best and worst projects
+# desc.out             # html - Descriptive Stats
+# map.all.out          # png  - Map of all locations
+# prop.model.out       # html - Propensity model
+# pre.balance.path     # png  - Pre balance figure
+# post.balance.outpath # png  - Post-balance figure
+# balance.stats.out    # html - Balance summary table
+# ct.png.out           # png  - Causal Tree Figure
+# linear.het.out       # html - Linear model with het effects table
+# map.est.out          # png  - Map of Estimates
+# uncertainty.map.out  # png  - Map of uncertainty
+
+
+htmler <- setRefClass(
+  "htmler",
+  fields = list(
+    html = "character"
+  ),
+  methods = list(
+    initialize = function() {
+      "Init html"
+      html <<- "<!DOCTYPE html>
+                 <html>
+                 <head>
+                 <meta charset='UTF-8'>
+                 <title>Test geoML Output</title>
+                 </head>
+                 <body>"
+    },
+    complete = function() {
+      "Complete html"
+      html <<- paste(html, "</body></html>", sep="")
+      return(html)
+    },
+    view = function() {
+      print(html)
+    },
+    add = function(text, newLine=TRUE) {
+      n <- ''
+      if (newLines == TRUE) {
+        n <- '\n'
+      }
+
+      html <<- paste(html, text, n, sep="")
+    }
+  )
+)
+
+html <- htmler$new()
+for (i in readLines(out.sum)) {
+  html$add(i, newLine=FALSE)
+}
+html$add('\n')
+
+html$add(paste('<img src="', hist.out, '">', sep=""))
+
+
+for (i in readLines(desc.out)) {
+  html$add(i, newLine=FALSE)
+}
+html$add('\n')
+
+
+html$add(paste('<img src="', map.all.out, '">', sep=""))
+
+for (i in readLines(prop.model.out)) {
+  html$add(i, newLine=FALSE)
+}
+
+html$add(paste('<img src="', pre.balance.path, '">', sep=""))
+html$add(paste('<img src="', post.balance.path, '">', sep=""))
+
+for (i in readLines(balance.stats.out)) {
+  html$add(i, newLine=FALSE)
+}
+html$add('\n')
+
+html$add(paste('<img src="', ct.png.out, '">', sep=""))
+
+for (i in readLines(linear.het.out)) {
+  html$add(i, newLine=FALSE)
+}
+html$add('\n')
+
+html$add(paste('<img src="', map.est.out, '">', sep=""))
+
+html$add(paste('<img src="', uncertainty.map.out, '">', sep=""))
+
+html_out <- html$complete()
+
+
+write(html_out, file=paste(out_path,file.prefix,"_complete.html",sep=""))
+
+
+
 
 
   }
