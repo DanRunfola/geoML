@@ -892,107 +892,108 @@ geoML <- function(dta,
 fill=c("red","blue"), bty="n")
 dev.off()
 
-  return(trt.dta)
+
+  # ----------------------------------
+
+  # out.sum              # txt  - Text file containing N for Control and Treatment cases
+  # hist.out             # png  - Histogram of estimate / overall summary
+  # best.worst.out       # csv  - CSV of best and worst projects
+  # desc.out             # html - Descriptive Stats
+  # map.all.out          # png  - Map of all locations
+  # prop.model.out       # html - Propensity model
+  # pre.balance.path     # png  - Pre balance figure
+  # post.balance.outpath # png  - Post-balance figure
+  # balance.stats.out    # html - Balance summary table
+  # ct.png.out           # png  - Causal Tree Figure
+  # linear.het.out       # html - Linear model with het effects table
+  # map.est.out          # png  - Map of Estimates
+  # uncertainty.map.out  # png  - Map of uncertainty
 
 
+  htmler <- setRefClass(
+    "htmler",
+    fields = list(
+      html = "character"
+    ),
+    methods = list(
+      initialize = function() {
+        "Init html"
+        html <<- "<!DOCTYPE html>
+                   <html>
+                   <head>
+                   <meta charset='UTF-8'>
+                   <title>Test geoML Output</title>
+                   </head>
+                   <body>"
+      },
+      complete = function() {
+        "Complete html"
+        html <<- paste(html, "</body></html>", sep="")
+        return(html)
+      },
+      view = function() {
+        print(html)
+      },
+      add = function(text, newLine=TRUE) {
+        n <- ''
+        if (newLines == TRUE) {
+          n <- '\n'
+        }
 
-# out.sum              # txt  - Text file containing N for Control and Treatment cases
-# hist.out             # png  - Histogram of estimate / overall summary
-# best.worst.out       # csv  - CSV of best and worst projects
-# desc.out             # html - Descriptive Stats
-# map.all.out          # png  - Map of all locations
-# prop.model.out       # html - Propensity model
-# pre.balance.path     # png  - Pre balance figure
-# post.balance.outpath # png  - Post-balance figure
-# balance.stats.out    # html - Balance summary table
-# ct.png.out           # png  - Causal Tree Figure
-# linear.het.out       # html - Linear model with het effects table
-# map.est.out          # png  - Map of Estimates
-# uncertainty.map.out  # png  - Map of uncertainty
-
-
-htmler <- setRefClass(
-  "htmler",
-  fields = list(
-    html = "character"
-  ),
-  methods = list(
-    initialize = function() {
-      "Init html"
-      html <<- "<!DOCTYPE html>
-                 <html>
-                 <head>
-                 <meta charset='UTF-8'>
-                 <title>Test geoML Output</title>
-                 </head>
-                 <body>"
-    },
-    complete = function() {
-      "Complete html"
-      html <<- paste(html, "</body></html>", sep="")
-      return(html)
-    },
-    view = function() {
-      print(html)
-    },
-    add = function(text, newLine=TRUE) {
-      n <- ''
-      if (newLines == TRUE) {
-        n <- '\n'
+        html <<- paste(html, text, n, sep="")
       }
-
-      html <<- paste(html, text, n, sep="")
-    }
+    )
   )
-)
 
-html <- htmler$new()
-for (i in readLines(out.sum)) {
-  html$add(i, newLine=FALSE)
-}
-html$add('\n')
+  html <- htmler$new()
+  for (i in readLines(out.sum)) {
+    html$add(i, newLine=FALSE)
+  }
+  html$add('\n')
 
-html$add(paste('<img src="', hist.out, '">', sep=""))
-
-
-for (i in readLines(desc.out)) {
-  html$add(i, newLine=FALSE)
-}
-html$add('\n')
+  html$add(paste('<img src="', hist.out, '">', sep=""))
 
 
-html$add(paste('<img src="', map.all.out, '">', sep=""))
-
-for (i in readLines(prop.model.out)) {
-  html$add(i, newLine=FALSE)
-}
-
-html$add(paste('<img src="', pre.balance.path, '">', sep=""))
-html$add(paste('<img src="', post.balance.path, '">', sep=""))
-
-for (i in readLines(balance.stats.out)) {
-  html$add(i, newLine=FALSE)
-}
-html$add('\n')
-
-html$add(paste('<img src="', ct.png.out, '">', sep=""))
-
-for (i in readLines(linear.het.out)) {
-  html$add(i, newLine=FALSE)
-}
-html$add('\n')
-
-html$add(paste('<img src="', map.est.out, '">', sep=""))
-
-html$add(paste('<img src="', uncertainty.map.out, '">', sep=""))
-
-html_out <- html$complete()
+  for (i in readLines(desc.out)) {
+    html$add(i, newLine=FALSE)
+  }
+  html$add('\n')
 
 
-write(html_out, file=paste(out_path,file.prefix,"_complete.html",sep=""))
+  html$add(paste('<img src="', map.all.out, '">', sep=""))
+
+  for (i in readLines(prop.model.out)) {
+    html$add(i, newLine=FALSE)
+  }
+
+  html$add(paste('<img src="', pre.balance.path, '">', sep=""))
+  html$add(paste('<img src="', post.balance.path, '">', sep=""))
+
+  for (i in readLines(balance.stats.out)) {
+    html$add(i, newLine=FALSE)
+  }
+  html$add('\n')
+
+  html$add(paste('<img src="', ct.png.out, '">', sep=""))
+
+  for (i in readLines(linear.het.out)) {
+    html$add(i, newLine=FALSE)
+  }
+  html$add('\n')
+
+  html$add(paste('<img src="', map.est.out, '">', sep=""))
+
+  html$add(paste('<img src="', uncertainty.map.out, '">', sep=""))
+
+  html_out <- html$complete()
+
+  print(html_out)
+  write(html_out, file=paste(out_path,file.prefix,"_complete.html",sep=""))
+
+  # ----------------------------------
 
 
-
+  return(trt.dta)
 
 
   }
