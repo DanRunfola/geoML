@@ -1,4 +1,5 @@
 #
+#
 #Generalized Implementation of Propensity Matching, CT, RF, and MatchIt Linear Models
 #Inputs:
 #Required:
@@ -139,6 +140,10 @@ geoML <- function(dta,
                   tree.cnt = 1000,
                   col.invert=FALSE)
 {
+
+  #Ensure no names have spaces
+  names(dta) <- make.names(names(dta))
+
   #Truncate to relevant variables
   cvar.lim <- ceiling(length(ctrl) / 2)
   ctrl.vars <- ctrl[1:cvar.lim]
@@ -251,6 +256,7 @@ geoML <- function(dta,
   exec_str = paste("matchit(",trt[1], "~", paste(ctrl.vars, collapse="+"),
                    ",data=na.omit(sub.dta),caliper=",caliper,")",sep="")
 
+  print(exec_str)
 
   m.ret <- eval(parse(text=exec_str))
   sub.dta$propensity <- predict(m.ret$model, newdata=sub.dta, type="response")
@@ -261,6 +267,9 @@ geoML <- function(dta,
   plot.dta <- sub.dta
   plot.dta$Type <- counterfactual.name
   plot.dta[plot.dta[trt[1]] == 1,]["Type"] <- trt[2]
+
+  #plot.dta <- lapply(plot.dta, function(x) as.numeric(
+  #			as.character(x)))
 
   a0 <- ggplot(data=plot.dta, aes(x=propensity,fill=Type)) +
     geom_histogram(binwidth=.05, alpha=.5, position="identity")+
@@ -340,6 +349,7 @@ geoML <- function(dta,
             out = paste(out_path,file.prefix,"_propensityModel.html",sep="")
   )
 
+ 
   #============================================================
   #============================================================
   #Post-balance plot - propensity score and four key variables (first four in list taken otherwise; prefix_postbalance.png)
@@ -347,7 +357,7 @@ geoML <- function(dta,
   plot.dta$Type <- counterfactual.name
   plot.dta[plot.dta[trt[1]] == 1,]["Type"] <- trt[2]
 
-  a0 <- ggplot(data=plot.dta, aes(x=distance,fill=Type)) +
+   a0 <- ggplot(data=plot.dta, aes(x=distance,fill=Type)) +
     geom_histogram(binwidth=.05, alpha=.5, position="identity")+
     ggtitle("Post-Balance Metrics") +
     theme(legend.position="bottom") + xlab("Propensity Scores")+
@@ -458,6 +468,11 @@ geoML <- function(dta,
   #------------------
   #------------------
   tree.dta <- sub.dta[!is.na(sub.dta$transOutcome),]
+  match.ids <- m.ret$match.matrix[!is.na(m.ret$match.matrix)]
+  match.ids <- c(match.ids, names(m.ret$match.matrix[!is.na(m.ret$match.matrix),]))
+
+  tree.dta <- tree.dta[match.ids,]	
+  
   alist <- list(eval=ctev, split=ctsplit, init=ctinit)
   dbb = tree.dta
   k = tree.ctrl[2]
@@ -484,6 +499,7 @@ geoML <- function(dta,
     removed_nodes = 0
     removed_nodes = cross_validate(sub.fit.dm, index,removed_nodes)
     removed_nodes = removed_nodes[-1]
+ 
     for(l in 1:length(removed_nodes)){
       error = 0
       sub.fit.pred = snip.rpart(sub.fit, removed_nodes[1:l])
@@ -496,10 +512,13 @@ geoML <- function(dta,
       idx = as.numeric(rownames(testset))
       dbidx = as.numeric(rownames(dbb))
 
+	  
       for(pid in 1:(dim(y)[1])){
         id = match(idx[pid],dbidx)
         error = error + (dbb$transOutcome[id] - val[pid])^2
       }
+
+	if(length(pt) == 0){error = 0}
 
       if(error == 0){
         errset[[i]][l] = 1000000
@@ -580,11 +599,13 @@ geoML <- function(dta,
   #Stargazer of linear model using matched cases and interactions identified in Causal Tree (prefix_linearMatch.html)
   lm.exec <- paste("lm(",outcome[1],"~",trt[1],"+",paste(ctrl.vars, collapse="+"), sep="")
 
+  if(length(var.rec) > 1)
+{
   for(i in 2:length(var.rec))
   {
     lm.exec <- paste(lm.exec, "+", var.rec[i],"*",trt[1])
   }
-
+}
   lm.exec <- paste(lm.exec, ",data=match.data(m.ret))")
 
 
@@ -646,21 +667,20 @@ geoML <- function(dta,
   #Map of predicted results from Causal Tree (prefix_map_estimate.png)
   sub.dta$tree.pred <- predict(final.tree, newdata=sub.dta)
   
-  out = paste(out_path,file.prefix,"_summary_estimates.html",sep="")
+  out.sum = paste(out_path,file.prefix,"_summary_estimates.txt",sep="")
   
   print("SUMMARY STATISTICS OF TREE PREDICTION:")
   print(summary(sub.dta$tree.pred))
   
-  
-  write(summary(sub.dta$tree.pred), file = out,
+  write("\nTreatment Cases:", file=out.sum, append=TRUE)
+  write(paste("T dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 1,])[1]), file = out.sum,
         append = TRUE)
-  
-  write(paste("T dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 1,])), file = out,
-        append = TRUE)
-  write(paste("C dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 0,])), file = out,
+  write("\nControl Cases:", file=out.sum, append=TRUE)
+  write(paste("C dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 0,])[1]), file = out.sum,
         append = TRUE)
 
-  
+  ct.mean.est <- summary(sub.dta$tree.pred)[4]
+
   sub.dta <- cbind(sub.dta, ret.vec.dta)
   
 
@@ -827,7 +847,8 @@ geoML <- function(dta,
   spdf <- SpatialPointsDataFrame(coords = lonlat, data = rf.tree.dtaB,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
 
-
+  write("\nUncertainty Mean (+/- 95%):",file=out.sum, append=TRUE)
+  write(summary(rf.tree.dta$unc)[4], file=out.sum, append=TRUE)
 
   p <- spplot(spdf, "unc", cex=0.4,
               cuts=5,
@@ -845,6 +866,21 @@ geoML <- function(dta,
       res = 300)
   print(p)
   dev.off()
+
+##Produce histogram of uncertainty, with a red line marking the CT result.
+  rf.means <- rowMeans(rf.res)
+  mean.rf.est <- mean(rf.means)
+  png(paste(out_path,file.prefix,"_uncertHist.png", sep=""),
+	width = 6,
+	height = 4,
+	units='in',
+	res=300)
+  hist(rf.means, main="Model Uncertainty", xlab="Estimated Mean Impact", ylab="Number of Simulations")
+  abline(v=mean.rf.est, col="blue", lwd=2)
+  abline(v=ct.mean.est, col="red", lwd=1)
+  legend("topleft", c("Causal Tree Mean", "Random Forest Mean"),
+fill=c("red","blue"), bty="n")
+dev.off()
 
   return(trt.dta)
   }
