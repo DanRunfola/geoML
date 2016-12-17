@@ -606,14 +606,16 @@ geoML <- function(dta,
   linear.het.out <- paste(out_path,file.prefix,"_linearMatch.html",sep="")
   lm.exec <- paste("lm(",outcome[1],"~",trt[1],"+",paste(ctrl.vars, collapse="+"), sep="")
 
-  if(length(var.rec) > 1)
-{
+  print(match.data(m.ret))
+  het.dta <- lapply(match.data(m.ret), function(x) scale(as.numeric(x)))
+  print(het.dta)
   for(i in 2:length(var.rec))
   {
     lm.exec <- paste(lm.exec, "+", var.rec[i],"*",trt[1])
   }
-}
-  lm.exec <- paste(lm.exec, ",data=match.data(m.ret))")
+
+  
+  lm.exec <- paste(lm.exec, ",data=het.dta)")
 
 
   het.model <- eval(parse(text=lm.exec))
@@ -654,11 +656,13 @@ geoML <- function(dta,
 
   print(all.lab)
   #all.lab <- c("Treatment", ctrl.names, het.lab[2:length(het.lab)])
-
+  print(het.model)
+  print(lm.exec)
   stargazer(het.model,
             type="html",
             median=TRUE,
             digits=2,
+	    digits.extra = 100,
             title=paste("Matched Model: ",trt[2]," (Treated), ",counterfactual.name, " (Control)", sep=""),
             covariate.labels = all.lab,
             font.size="small",
@@ -679,11 +683,11 @@ geoML <- function(dta,
   print("SUMMARY STATISTICS OF TREE PREDICTION:")
   print(summary(sub.dta$tree.pred))
 
-  write("\nTreatment Cases:", file=out.sum, append=TRUE)
-  write(paste("T dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 1,])[1]), file = out.sum,
+  write("Treatment Cases:", file=out.sum, append=TRUE)
+  write(paste(dim(sub.dta.desc[sub.dta.desc[trt[1]] == 1,])[1]), file = out.sum,
         append = TRUE)
-  write("\nControl Cases:", file=out.sum, append=TRUE)
-  write(paste("C dim:",dim(sub.dta.desc[sub.dta.desc[trt[1]] == 0,])[1]), file = out.sum,
+  write("Control Cases:", file=out.sum, append=TRUE)
+  write(paste(dim(sub.dta.desc[sub.dta.desc[trt[1]] == 0,])[1]), file = out.sum,
         append = TRUE)
 
   ct.mean.est <- summary(sub.dta$tree.pred)[4]
@@ -855,8 +859,8 @@ geoML <- function(dta,
   spdf <- SpatialPointsDataFrame(coords = lonlat, data = rf.tree.dtaB,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
 
-  write("\nUncertainty Mean (+/- 95%):",file=out.sum, append=TRUE)
-  write(summary(rf.tree.dta$unc)[4], file=out.sum, append=TRUE)
+  #write("\nUncertainty Mean (+/- 95%):",file=out.sum, append=TRUE)
+  #write(summary(rf.tree.dta$unc)[4], file=out.sum, append=TRUE)
 
   p <- spplot(spdf, "unc", cex=0.4,
               cuts=5,
@@ -885,11 +889,11 @@ geoML <- function(dta,
 	height = 4,
 	units='in',
 	res=300)
-  hist(rf.means, main="Model Uncertainty", xlab="Estimated Mean Impact", ylab="Number of Simulations")
+  hist(rf.means, main="Model Uncertainty", xlab=paste("Estimated Mean Impact",outcome[2]), ylab="Number of Simulations")
   abline(v=mean.rf.est, col="blue", lwd=2)
-  abline(v=ct.mean.est, col="red", lwd=1)
-  legend("topleft", c("Causal Tree Mean", "Random Forest Mean"),
-fill=c("red","blue"), bty="n")
+  #abline(v=ct.mean.est, col="red", lwd=1)
+  legend("topleft", c("Random Forest Mean"),
+fill=c("blue"), bty="n", cex=0.5)
 dev.off()
 
 
@@ -946,13 +950,24 @@ dev.off()
   )
 
   html <- htmler$new()
+  html$add(paste("<h2> Contrast: ",trt[2]," (Treated), ",counterfactual.name, " (Control)</h2>", sep=""))
   for (i in readLines(out.sum)) {
-    html$add(i, newLine=FALSE)
+    html$add(paste('<b>',i,'</b><br \\>'))
   }
-  html$add('\n')
+  html$add('<br \\>')
 
-  html$add(paste('<img src="', basename(hist.out), '" width="100%">', sep=""))
+  html$add(paste('<img src="', basename(hist.out), '" width="600px">', sep=""))
 
+  #Description of histogram
+  html$add("<p>")
+  html$add("Figure 1. Mean Estimated Impacts from Causal Tree and Random Forest Estimation Strategies.")
+  html$add("</p>")
+  html$add("<p>")
+  #html$add("Figure 1 illustrates the overall mean impact estimate from the Random Forest.")
+  html$add("In this illustration, the blue vertical line is the global estimate of impact from the random forest.")
+  html$add("The range of uncertainty is illustrated using a histogram, indicating the proportion of simulations which result in positive or negative estimates.")
+  html$add("Specific confidence intervals can be calculated for this global estimate, or for individual project locations.  A map of project location uncertainties is presented below.")
+  html$add("</p>")
 
   for (i in readLines(desc.out)) {
     html$add(i, newLine=FALSE)
@@ -960,30 +975,31 @@ dev.off()
   html$add('\n')
 
 
-  html$add(paste('<img src="', basename(map.all.out), '" width="100%">', sep=""))
+  html$add(paste('<img src="', basename(map.all.out), '" width="600px">', sep=""))
 
   for (i in readLines(prop.model.out)) {
     html$add(i, newLine=FALSE)
   }
 
-  html$add(paste('<img src="', basename(pre.balance.path), '" width="100%">', sep=""))
-  html$add(paste('<img src="', basename(post.balance.outpath), '" width="100%">', sep=""))
+  html$add(paste('<img src="', basename(pre.balance.path), '" width="600px">', sep=""))
+  html$add(paste('<img src="', basename(post.balance.outpath), '" width="600px">', sep=""))
 
   for (i in readLines(balance.stats.out)) {
     html$add(i, newLine=FALSE)
   }
   html$add('\n')
 
-  html$add(paste('<img src="', basename(ct.png.out), '" width="100%">', sep=""))
+  html$add(paste('<img src="', basename(ct.png.out), '" width="1200px">', sep=""))
 
   for (i in readLines(linear.het.out)) {
     html$add(i, newLine=FALSE)
   }
+  html$add("<p>Standardized Beta Coefficients for Linear Model with Heterogeneous Effects</p>")
   html$add('\n')
 
-  html$add(paste('<img src="', basename(map.est.out), '" width="100%">', sep=""))
+  html$add(paste('<img src="', basename(map.est.out), '" width="600px">', sep=""))
 
-  html$add(paste('<img src="', basename(uncertainty.map.out), '" width="100%">', sep=""))
+  html$add(paste('<img src="', basename(uncertainty.map.out), '" width="600px">', sep=""))
 
   html_out <- html$complete()
 
