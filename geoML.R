@@ -884,16 +884,26 @@ geoML <- function(dta,
   hist.out <- paste(out_path,file.prefix,"_uncertHist.png", sep="")
   rf.means <- rowMeans(rf.res)
   mean.rf.est <- mean(rf.means)
+L <-  hist(rf.means, main="Model Uncertainty",
+       xlab=paste("Estimated Mean Impact",outcome[2]),
+       ylab="Number of Simulations"
+       )
+
+
+clr <- ifelse(L$breaks < 0, "#F8766D", "#00BA38")[-length(L$breaks)]
+
+
+hist(t, col=clr)
   png(paste(out_path,file.prefix,"_uncertHist.png", sep=""),
 	width = 6,
 	height = 4,
 	units='in',
 	res=300)
+
   hist(rf.means, main="Model Uncertainty", 
        xlab=paste("Estimated Mean Impact",outcome[2]), 
        ylab="Number of Simulations",
-       breaks=c(min(rf.means),0,max(rf.means)),
-                col=c("#F8766D", "#00BA38"))
+       col=clr)
   abline(v=mean.rf.est, col="blue", lwd=2)
   #abline(v=ct.mean.est, col="red", lwd=1)
   legend("topleft", c("Random Forest Mean"),
