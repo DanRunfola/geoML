@@ -893,7 +893,7 @@ L <-  hist(rf.means, main="Model Uncertainty",
 clr <- ifelse(L$breaks < 0, "#F8766D", "#00BA38")[-length(L$breaks)]
 
 
-hist(t, col=clr)
+
   png(paste(out_path,file.prefix,"_uncertHist.png", sep=""),
 	width = 6,
 	height = 4,
