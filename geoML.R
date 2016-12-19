@@ -892,8 +892,8 @@ geoML <- function(dta,
   hist(rf.means, main="Model Uncertainty", 
        xlab=paste("Estimated Mean Impact",outcome[2]), 
        ylab="Number of Simulations",
-       breaks=c(min(rf.means),0,max(rf.means),
-                col=c("#F8766D", "#00BA38")))
+       breaks=c(min(rf.means),0,max(rf.means)),
+                col=c("#F8766D", "#00BA38"))
   abline(v=mean.rf.est, col="blue", lwd=2)
   #abline(v=ct.mean.est, col="red", lwd=1)
   legend("topleft", c("Random Forest Mean"),
