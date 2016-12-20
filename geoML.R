@@ -591,7 +591,7 @@ geoML <- function(dta,
   }
   else
   {
-    rpart.plot(print.tree, extra=1, branch=1, type=4, tweak=1, clip.right.labs=FALSE,
+    rpart.plot(print.tree, extra=1, branch=1, type=4, tweak=1, cex=1.5, clip.right.labs=FALSE,
                box.col=c("pink", "palegreen3")[findInterval(print.tree $frame$yval, v = c(-999999989999999999,0))],
                faclen=0,
                varlen=0,fallen.leaves=FALSE)
@@ -889,9 +889,14 @@ L <-  hist(rf.means, main="Model Uncertainty",
        ylab="Number of Simulations"
        )
 
-
+if(col.invert == FALSE)
+{
 clr <- ifelse(L$breaks < 0, "#F8766D", "#00BA38")[-length(L$breaks)]
-
+}
+else
+{
+clr <- ifelse(L$breaks < 0, "#00BA38", "#F8766D")[-length(L$breaks)]
+}
 
 
   png(paste(out_path,file.prefix,"_uncertHist.png", sep=""),
