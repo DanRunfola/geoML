@@ -584,14 +584,14 @@ geoML <- function(dta,
       res = 600)
   if(col.invert == TRUE)
   {
-    rpart.plot(print.tree, extra=1, branch=1, type=4, tweak=1, cex=1.5, clip.right.labs=FALSE,
+    rpart.plot(print.tree, extra=1, branch=1, type=4, tweak=1, cex=0.5, clip.right.labs=FALSE,
                box.col=c("palegreen3", "pink")[findInterval(print.tree $frame$yval, v = c(-999999999999999999,0))],
                faclen=0,
                varlen=0,fallen.leaves=FALSE)
   }
   else
   {
-    rpart.plot(print.tree, extra=1, branch=1, type=4, tweak=1, cex=1.5, clip.right.labs=FALSE,
+    rpart.plot(print.tree, extra=1, branch=1, type=4, tweak=1, cex=1.0, clip.right.labs=FALSE,
                box.col=c("pink", "palegreen3")[findInterval(print.tree $frame$yval, v = c(-999999989999999999,0))],
                faclen=0,
                varlen=0,fallen.leaves=FALSE)
