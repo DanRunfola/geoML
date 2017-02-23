@@ -225,8 +225,8 @@ geoML <- function(dta,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
 
 
-  if (Sys.getenv("USER") == "vagrant") {
-    land.mask <- readOGR("/home/vagrant/geoML/data/countries.geojson", "OGRGeoJSON")
+  if (Sys.getenv("USER") == "vagrant" | Sys.getenv("USER") == "ubuntu") {
+    land.mask <- readOGR(path.expand("~/geoML/data/countries.geojson"), "OGRGeoJSON")
   } else {
     land.mask <- readOGR("data/countries.geojson", "OGRGeoJSON")
   }
@@ -755,8 +755,8 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Random Forest results (prefix_rf.csv)
-  if (Sys.getenv("USER") == "vagrant") {
-    python.path <- "/home/vagrant/CausalForest/CF.py"
+  if (Sys.getenv("USER") == "vagrant" | Sys.getenv("USER") == "ubuntu") {
+    python.path <- path.expand("~/CausalForest/CF.py")
   } else {
     python.path <- "/home/aiddata/Desktop/Github/CausalForest/CF.py"
   }
