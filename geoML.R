@@ -615,7 +615,7 @@ geoML <- function(dta,
     lm.exec <- paste(lm.exec, "+", var.rec[i],"*",trt[1])
   }
 
-  
+
   lm.exec <- paste(lm.exec, ",data=het.dta)")
 
 
@@ -740,7 +740,10 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #CSV of predicted results from Causal Tree and relevant covariates (prefix_prediction.csv)
-  write.csv(trt.dta, paste(out_path,file.prefix,"_prediction.csv",sep=""))
+  #write trt only
+  # write.csv(trt.dta, paste(out_path,file.prefix,"_prediction.csv",sep=""))
+  # write trt and cnt
+  write.csv(sub.dta, paste(out_path,file.prefix,"_prediction.csv",sep=""))
 
   #Biggset and smallest
   ret.trt.dta <- trt.dta[trt.dta$tree.pred == max(trt.dta$tree.pred) |
@@ -906,8 +909,8 @@ clr <- ifelse(L$breaks < 0, "#00BA38", "#F8766D")[-length(L$breaks)]
 	units='in',
 	res=300)
 
-  hist(rf.means, main="Model Uncertainty", 
-       xlab=paste("Estimated Mean Impact",outcome[2]), 
+  hist(rf.means, main="Model Uncertainty",
+       xlab=paste("Estimated Mean Impact",outcome[2]),
        ylab="Number of Simulations",
        col=clr)
   abline(v=mean.rf.est, col="blue", lwd=2)
@@ -946,7 +949,7 @@ dev.off()
                    <html>
                    <head>
                    <meta charset='UTF-8'>
-                   <title>Test geoML Output</title>
+                   <title>geoML Output</title>
                    </head>
                    <body>"
       },
