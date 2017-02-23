@@ -44,8 +44,8 @@ library(stargazer)
 library(matrixStats)
 #library(doBy)
 
-if (Sys.getenv("USER") == "vagrant") {
-  sourceCpp("/home/vagrant/geoML/split.cpp")
+if (Sys.getenv("USER") == "vagrant" | Sys.getenv("USER") == "ubuntu") {
+  sourceCpp(path.expand("~/geoML/split.cpp"))
 } else {
   sourceCpp("/home/aiddata/Desktop/Github/geoML/split.cpp")
 }
