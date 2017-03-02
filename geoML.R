@@ -143,7 +143,7 @@ geoML <- function(dta,
 {
 
 
-  if (file.prefix != "" & substr(file.prefix, nchar(file.prefix)) != "_") {
+  if (file.prefix != "" & substring(file.prefix, nchar(file.prefix)) != "_") {
     file.prefix <- paste(file.prefix, "_", sep="")
   }
 
