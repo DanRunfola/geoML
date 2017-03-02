@@ -565,6 +565,8 @@ geoML <- function(dta,
   pruned_nodes = removed_nodes[1:round(mean(avg.index))]
   final.tree <- snip.rpart(fit1, pruned_nodes)
 
+  write.csv(final.tree$frame, paste(out_path,file.prefix,"_tree_text.csv",sep=""))
+
   print.tree <- final.tree
   var.rec <- ""
   het.lab <- ""
