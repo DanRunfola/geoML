@@ -571,8 +571,13 @@ geoML <- function(dta,
   final.tree <- snip.rpart(fit1, pruned_nodes)
 
   write.csv(final.tree$frame, paste(out_path,file.prefix,"tree_frame.csv",sep=""))
-  write(print(final.tree), paste(out_path,file.prefix,"tree_text.txt",sep=""))
-  write(final.tree$splits, paste(out_path,file.prefix,"tree_slits.txt",sep=""))
+  write.csv(final.tree$splits, paste(out_path,file.prefix,"tree_splits.csv",sep=""))
+
+  sink(paste(out_path,file.prefix,"tree_overview.txt",sep=""))
+  print(final.tree)
+  sink()
+
+  save(final.tree, file=paste(out_path,file.prefix,"tree_data.rdata",sep=""))
 
   print.tree <- final.tree
   var.rec <- ""
