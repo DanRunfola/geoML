@@ -130,9 +130,9 @@ geoML <- function(dta,
                   ctrl,
                   outcome,
                   out_path,
-                  file.prefix,
                   kvar,
                   top.rep,
+                  file.prefix="",
                   geog.fields = c("latitude", "longitude"),
                   caliper=0.5,
                   counterfactual.name="Control",
@@ -141,6 +141,11 @@ geoML <- function(dta,
                   col.invert=FALSE,
 		  tree.cex=1.0)
 {
+
+
+  if (file.prefix != "" & substr(file.prefix, nchar(file.prefix)) != "_") {
+    file.prefix <- paste(file.prefix, "_", sep="")
+  }
 
   #Ensure no names have spaces
   names(dta) <- make.names(names(dta))
@@ -201,7 +206,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer table of descriptive statistics (prefix_desc.html)
-  desc.out = paste(out_path,file.prefix,"_desc.html",sep="")
+  desc.out = paste(out_path,file.prefix,"desc.html",sep="")
   len_o <- 1:length(names(sub.dta.desc))
   stargazer(sub.dta.desc[sub.dta.desc[trt[1]] == 1,],
             type="html",
@@ -211,7 +216,7 @@ geoML <- function(dta,
             covariate.labels = labels,
             omit.summary.stat=c("n"),
             order=len_o,
-            out = paste(out_path,file.prefix,"_desc.html",sep="")
+            out = paste(out_path,file.prefix,"desc.html",sep="")
   )
 
 
@@ -219,7 +224,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Map of all locations (prefix_map.png)
-  map.all.out <- paste(out_path,file.prefix,"_map.png",sep="")
+  map.all.out <- paste(out_path,file.prefix,"map.png",sep="")
   lonlat <- sub.dta[,c(geog.fields[2], geog.fields[1])]
   spdf <- SpatialPointsDataFrame(coords = lonlat, data = sub.dta,
                                  proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
@@ -245,7 +250,7 @@ geoML <- function(dta,
               sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
   p$legend$bottom$args$key$text[[1]][1] <- counterfactual.name
   p$legend$bottom$args$key$text[[1]][2] <- trt[2]
-  png(paste(out_path,file.prefix,"_map.png",sep=""),
+  png(paste(out_path,file.prefix,"map.png",sep=""),
       width = 6,
       height = 4,
       units = 'in',
@@ -268,7 +273,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Pre-balance plot - propensity score and four key variables (first four in list taken otherwise; prefix_prebalance.png)
-  pre.balance.path <- paste(out_path,file.prefix,"_prebalance.png",sep="")
+  pre.balance.path <- paste(out_path,file.prefix,"prebalance.png",sep="")
   plot.dta <- sub.dta
   plot.dta$Type <- counterfactual.name
   plot.dta[plot.dta[trt[1]] == 1,]["Type"] <- trt[2]
@@ -298,7 +303,7 @@ geoML <- function(dta,
     geom_histogram(binwidth=NULL, alpha=.5, position="identity") +
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[4],ctrl.vars)])
 
-  png(paste(out_path,file.prefix,"_prebalance.png",sep=""),
+  png(paste(out_path,file.prefix,"prebalance.png",sep=""),
       width = 7,
       height = 6,
       units = 'in',
@@ -309,7 +314,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer table for propensity linear model (prefix_propensityModel.html)
-  prop.model.out <- paste(out_path,file.prefix,"_propensityModel.html",sep="")
+  prop.model.out <- paste(out_path,file.prefix,"propensityModel.html",sep="")
 
   for(k in 2:length(m.ret$model$coefficients))
   {
@@ -352,14 +357,14 @@ geoML <- function(dta,
             omit.stat=c("LL","ser","f"),
             single.row=TRUE,
             ci=TRUE, ci.level=0.95,
-            out = paste(out_path,file.prefix,"_propensityModel.html",sep="")
+            out = paste(out_path,file.prefix,"propensityModel.html",sep="")
   )
 
 
   #============================================================
   #============================================================
   #Post-balance plot - propensity score and four key variables (first four in list taken otherwise; prefix_postbalance.png)
-  post.balance.outpath <- paste(out_path,file.prefix,"_postbalance.png",sep="")
+  post.balance.outpath <- paste(out_path,file.prefix,"postbalance.png",sep="")
   plot.dta <- match.data(m.ret)
   plot.dta$Type <- counterfactual.name
   plot.dta[plot.dta[trt[1]] == 1,]["Type"] <- trt[2]
@@ -386,7 +391,7 @@ geoML <- function(dta,
     geom_histogram(binwidth=NULL, alpha=.5, position="identity") +
     ylab("") + theme(legend.position="none") + xlab(ctrl.names[match(kvar[4],ctrl.vars)])
 
-  png(paste(out_path,file.prefix,"_postbalance.png",sep=""),
+  png(paste(out_path,file.prefix,"postbalance.png",sep=""),
       width = 7,
       height = 6,
       units = 'in',
@@ -399,7 +404,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer table of balance statistics (prefix_balancestats.html)
-  balance.stats.out <- paste(out_path,file.prefix,"_balancestats.html",sep="")
+  balance.stats.out <- paste(out_path,file.prefix,"balancestats.html",sep="")
   s.rm <- summary(m.ret)$reduction
   row.names(s.rm)[1] <- "Propensity Score"
   for(k in 2:length(row.names(s.rm)))
@@ -422,7 +427,7 @@ geoML <- function(dta,
             title="Percent Balance Improvement:",
             dep.var.labels.include = TRUE,
             summary=FALSE,
-            out = paste(out_path,file.prefix,"_balancestats.html",sep="")
+            out = paste(out_path,file.prefix,"balancestats.html",sep="")
   )
 
 
@@ -546,7 +551,7 @@ geoML <- function(dta,
   #---------------
   #Build Final Tree
   #---------------
-  ct.png.out <- paste(out_path,file.prefix,"_ct.png",sep="")
+  ct.png.out <- paste(out_path,file.prefix,"ct.png",sep="")
   final.tree.exec <- paste("sub.fit = rpart(cbind(",
                      outcome[1],",",
                      trt[1],",ML.prop,transOutcome)~",
@@ -565,7 +570,9 @@ geoML <- function(dta,
   pruned_nodes = removed_nodes[1:round(mean(avg.index))]
   final.tree <- snip.rpart(fit1, pruned_nodes)
 
-  write.csv(final.tree$frame, paste(out_path, "tree_text.csv",sep=""))
+  write.csv(final.tree$frame, paste(out_path,file.prefix,"tree_frame.csv",sep=""))
+  write(final.tree, paste(out_path,file.prefix,"tree_text.txt",sep=""))
+  write(final.tree, paste(out_path,file.prefix,"tree_slits.txt",sep=""))
 
   print.tree <- final.tree
   var.rec <- ""
@@ -580,7 +587,7 @@ geoML <- function(dta,
     }
   }
 
-  png(paste(out_path,file.prefix,"_ct.png",sep=""),
+  png(paste(out_path,file.prefix,"ct.png",sep=""),
       width = 7,
       height = 4,
       units = 'in',
@@ -606,7 +613,7 @@ geoML <- function(dta,
   #============================================================
   #============================================================
   #Stargazer of linear model using matched cases and interactions identified in Causal Tree (prefix_linearMatch.html)
-  linear.het.out <- paste(out_path,file.prefix,"_linearMatch.html",sep="")
+  linear.het.out <- paste(out_path,file.prefix,"linearMatch.html",sep="")
   lm.exec <- paste("lm(",outcome[1],"~",trt[1],"+",paste(ctrl.vars, collapse="+"), sep="")
 
   print(match.data(m.ret))
@@ -674,14 +681,14 @@ geoML <- function(dta,
             single.row=TRUE,
             ci=TRUE, ci.level=0.95,
             dep.var.labels = outcome[2],
-            out = paste(out_path,file.prefix,"_linearMatch.html",sep="")
+            out = paste(out_path,file.prefix,"linearMatch.html",sep="")
   )
   #============================================================
   #============================================================
   #Map of predicted results from Causal Tree (prefix_map_estimate.png)
   sub.dta$tree.pred <- predict(final.tree, newdata=sub.dta)
 
-  out.sum = paste(out_path,file.prefix,"_summary_estimates.txt",sep="")
+  out.sum = paste(out_path,file.prefix,"summary_estimates.txt",sep="")
 
   print("SUMMARY STATISTICS OF TREE PREDICTION:")
   print(summary(sub.dta$tree.pred))
@@ -729,8 +736,8 @@ geoML <- function(dta,
                           ,cex=0.5),
                 sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
   }
-  map.est.out <- paste(out_path,file.prefix,"_map_estimate.png",sep="")
-  png(paste(out_path,file.prefix,"_map_estimate.png",sep=""),
+  map.est.out <- paste(out_path,file.prefix,"map_estimate.png",sep="")
+  png(paste(out_path,file.prefix,"map_estimate.png",sep=""),
       width = 6,
       height = 4,
       units = 'in',
@@ -743,9 +750,9 @@ geoML <- function(dta,
   #============================================================
   #CSV of predicted results from Causal Tree and relevant covariates (prefix_prediction.csv)
   #write trt only
-  # write.csv(trt.dta, paste(out_path,file.prefix,"_prediction.csv",sep=""))
+  # write.csv(trt.dta, paste(out_path,file.prefix,"prediction.csv",sep=""))
   # write trt and cnt
-  write.csv(sub.dta, paste(out_path,file.prefix,"_prediction.csv",sep=""))
+  write.csv(sub.dta, paste(out_path,file.prefix,"prediction.csv",sep=""))
 
   #Biggset and smallest
   ret.trt.dta <- trt.dta[trt.dta$tree.pred == max(trt.dta$tree.pred) |
@@ -774,7 +781,7 @@ geoML <- function(dta,
 
   c.vars.pass = paste(ctrl.vars[ctrl.vars %in% names(rf.tree.dta)], collapse=",")
   sys.call.str <- paste("python", python.path, csv.str, c.vars.pass, outcome[1], "transProp",
-                        paste(out_path,file.prefix,"_rf.csv",sep=""), tree.cnt)
+                        paste(out_path,file.prefix,"rf.csv",sep=""), tree.cnt)
 
   tree.resp <- system(sys.call.str, intern=TRUE)
   #CSV is written in the python script in the above line.
@@ -843,7 +850,7 @@ geoML <- function(dta,
   ##==========================
   ##Purity calculations are temporarily disabled
   #Jianing is looking into SciKit errors.
-  # png(paste(out_path,file.prefix,"_purity.png",sep=""),
+  # png(paste(out_path,file.prefix,"purity.png",sep=""),
   #     width = 6,
   #     height = 4,
   #     units = 'in',
@@ -858,7 +865,7 @@ geoML <- function(dta,
   # dev.off()
 
   #Map of uncertainty ("% of observations within 1 standard deviation of the mean") from RF (prefix_rf_unc.png)
-  rf.res <- read.csv(paste(out_path,file.prefix,"_rf.csv",sep=""), header=FALSE)
+  rf.res <- read.csv(paste(out_path,file.prefix,"rf.csv",sep=""), header=FALSE)
   rf.tree.dta$unc <- colSds(as.matrix(rf.res)) * 1.96
   rf.tree.dtaB <- rf.tree.dta[rf.tree.dta[trt[1]] == 1,]
   lonlat <- rf.tree.dtaB[,c(geog.fields[2], geog.fields[1])]
@@ -877,8 +884,8 @@ geoML <- function(dta,
                         ,cex=0.5),
               sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
 
-  uncertainty.map.out <- paste(out_path,file.prefix,"_map_uncertainty.png",sep="")
-  png(paste(out_path,file.prefix,"_map_uncertainty.png",sep=""),
+  uncertainty.map.out <- paste(out_path,file.prefix,"map_uncertainty.png",sep="")
+  png(paste(out_path,file.prefix,"map_uncertainty.png",sep=""),
       width = 6,
       height = 4,
       units = 'in',
@@ -887,7 +894,7 @@ geoML <- function(dta,
   dev.off()
 
 ##Produce histogram of uncertainty, with a red line marking the CT result.
-  hist.out <- paste(out_path,file.prefix,"_uncertHist.png", sep="")
+  hist.out <- paste(out_path,file.prefix,"uncertHist.png", sep="")
   rf.means <- rowMeans(rf.res)
   mean.rf.est <- mean(rf.means)
 L <-  hist(rf.means, main="Model Uncertainty",
@@ -905,7 +912,7 @@ clr <- ifelse(L$breaks < 0, "#00BA38", "#F8766D")[-length(L$breaks)]
 }
 
 
-  png(paste(out_path,file.prefix,"_uncertHist.png", sep=""),
+  png(paste(out_path,file.prefix,"uncertHist.png", sep=""),
 	width = 6,
 	height = 4,
 	units='in',
@@ -1029,7 +1036,7 @@ dev.off()
   html_out <- html$complete()
 
   print(html_out)
-  write(html_out, file=paste(out_path,file.prefix,"_complete.html",sep=""))
+  write(html_out, file=paste(out_path,file.prefix,"complete.html",sep=""))
 
   # ----------------------------------
 
