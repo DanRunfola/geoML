@@ -104,8 +104,7 @@ ctsplit <- function(y, wt, x, parms, continuous) {
     n = nrow(y)
     res = splitc(y)
     list(goodness=res[1:(n-1)], direction=res[n:(2*(n-1))])
-  }
-  else{
+  } else {
     res = splitnc(y,x)
     n=(length(res)+1)/2
     list(goodness=res[1:(n-1)], direction=res[n:(2*n-1)])
@@ -113,15 +112,15 @@ ctsplit <- function(y, wt, x, parms, continuous) {
 }
 
 ctinit <- function(y, offset, parms, wt) {
-  sfun <- function(yval, dev, wt, ylevel, digits ) {
+  sfun <- function(yval, dev, wt, ylevel, digits) {
     print(yval)
     paste("events=", round(yval[,1]),
           ", coef= ", format(signif(yval[,2], digits)),
           ", deviance=" , format(signif(dev, digits)),
-          sep = '')}
+          sep = '')
+  }
   environment(sfun) <- .GlobalEnv
-  list(y =y, parms = 0, numresp = 1, numy = 4,
-       summary = sfun)
+  list(y=y, parms=0, numresp=1, numy=4, summary=sfun)
 }
 
 
@@ -182,7 +181,7 @@ geoML <- function(dta,
     }
 
     if (k == 1) {
-      if(!is.na(id)) {
+      if (!is.na(id)) {
         labels <- id
       } else {
         labels <- names(sub.dta.desc)[k]
@@ -328,7 +327,7 @@ geoML <- function(dta,
           prop.labels <- names(m.ret$model$coefficients[k])
         }
     } else {
-      if(!is.na(id)) {
+      if (!is.na(id)) {
           prop.labels <- c(prop.labels, id)
       } else {
         prop.labels <- c(prop.labels, names(m.ret$model$coefficients[k]))
@@ -625,18 +624,18 @@ geoML <- function(dta,
 
     id <- ctrl.names[match(names(het.model$coefficients[k]),ctrl.vars)]
 
-    if(is.na(id)) {
+    if (is.na(id)) {
      id <- het.lab[match(names(het.model$coefficients[k]),v.rec.add)]
     }
 
-    if(k == 2) {
-      if(!is.na(id)) {
+    if (k == 2) {
+      if (!is.na(id)) {
         all.lab <- id
       } else {
         all.lab <- names(het.model$coefficients[k])
       }
     } else {
-      if(!is.na(id)) {
+      if (!is.na(id)) {
         all.lab <- c(all.lab, id)
       } else {
         all.lab <- c(all.lab, names(het.model$coefficients[k]))
@@ -699,27 +698,25 @@ geoML <- function(dta,
               col.regions=terrain.colors(5, alpha=1),
               xlim=c(-180,180),
               ylim=c(-60,90),
-              main=list(label=paste("Impact of Treatment (",trt[2],")", sep="")
-                        ,cex=0.5),
-              sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
+              main=list(label=paste("Impact of Treatment (",trt[2],")", sep=""), cex=0.5),
+              sp.layout=list(list(land.mask, fill="grey", first=TRUE)))
   } else {
     p <- spplot(spdf, zcol="tree.pred", cex=0.4,
                 cuts=5,
                 col.regions=rev(terrain.colors(5, alpha=1)),
                 xlim=c(-180,180),
                 ylim=c(-60,90),
-                main=list(label=paste("Impact of Treatment (",trt[2],")", sep="")
-                          ,cex=0.5),
-                sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
+                main=list(label=paste("Impact of Treatment (",trt[2],")", sep=""), cex=0.5),
+                sp.layout=list(list(land.mask, fill="grey", first=TRUE)))
   }
 
   map.est.out <- fpath("map_estimate.png")
 
   png(map.est.out,
-      width = 6,
-      height = 4,
-      units = 'in',
-      res = 300)
+      width=6,
+      height=4,
+      units='in',
+      res=300)
 
   print(p)
   dev.off()
@@ -779,32 +776,32 @@ geoML <- function(dta,
   purity.df <- data.frame(var=1:df.len, purity=1:df.len, col=1:df.len)
 
 
-  for(i in 1:df.len) {
+  for (i in 1:df.len) {
 
     purity.df[1][i,] <- ctrl.names[match(as.character(pur.out[[1]][(2 * i - 1)]), ctrl.vars)]
     purity.df[2][i,] <- as.character(pur.out[[1]][2 * i])
 
     #Calculate vector of bar colors based on the initial CT.
-    het.id <- match(paste("treatment:",as.character(pur.out[[1]][(2 * i - 1)]),sep=""),
+    het.id <- match(paste("treatment:", as.character(pur.out[[1]][(2 * i - 1)]), sep=""),
           names(het.model$coefficients))
 
-    if(!is.na(het.id)) {
-      if(col.invert == FALSE) {
-        if(het.model$coefficients[het.id][[1]] > 0) {
+    if (!is.na(het.id)) {
+      if (col.invert == FALSE) {
+        if (het.model$coefficients[het.id][[1]] > 0) {
           purity.df[3][i,] <- "green"
         }
-        if(het.model$coefficients[het.id][[1]] < 0) {
+        if (het.model$coefficients[het.id][[1]] < 0) {
           purity.df[3][i,] <- "red"
         }
       } else {
-        if(het.model$coefficients[het.id][[1]] > 0) {
+        if (het.model$coefficients[het.id][[1]] > 0) {
           purity.df[3][i,] <- "red"
         }
-        if(het.model$coefficients[het.id][[1]] < 0) {
+        if (het.model$coefficients[het.id][[1]] < 0) {
           purity.df[3][i,] <- "green"
         }
       }
-      if(het.model$coefficients[het.id][[1]] == 0) {
+      if (het.model$coefficients[het.id][[1]] == 0) {
         purity.df[3][i,] <- "black"
       }
     } else {
@@ -837,8 +834,9 @@ geoML <- function(dta,
   rf.tree.dta$unc <- colSds(as.matrix(rf.res)) * 1.96
   rf.tree.dtaB <- rf.tree.dta[rf.tree.dta[trt[1]] == 1,]
   lonlat <- rf.tree.dtaB[,c(geog.fields[2], geog.fields[1])]
-  spdf <- SpatialPointsDataFrame(coords = lonlat, data = rf.tree.dtaB,
-                                 proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
+  spdf <- SpatialPointsDataFrame(coords=lonlat,
+                                 data=rf.tree.dtaB,
+                                 proj4string=CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
 
   #write("\nUncertainty Mean (+/- 95%):",file=out.sum, append=TRUE)
   #write(summary(rf.tree.dta$unc)[4], file=out.sum, append=TRUE)
@@ -848,16 +846,15 @@ geoML <- function(dta,
               col.regions=rev(heat.colors(6, alpha=1)),
               xlim=c(-180,180),
               ylim=c(-60,90),
-              main=list(label="Uncertainty in Estimates (+/- @ 95% Confidence Interval)"
-                        ,cex=0.5),
-              sp.layout = list(list(land.mask, fill="grey", first=TRUE)))
+              main=list(label="Uncertainty in Estimates (+/- @ 95% Confidence Interval)", cex=0.5),
+              sp.layout=list(list(land.mask, fill="grey", first=TRUE)))
 
   uncertainty.map.out <- fpath("map_uncertainty.png")
   png(uncertainty.map.out,
-      width = 6,
-      height = 4,
-      units = 'in',
-      res = 300)
+      width=6,
+      height=4,
+      units='in',
+      res=300)
 
   print(p)
   dev.off()
@@ -868,9 +865,8 @@ geoML <- function(dta,
   mean.rf.est <- mean(rf.means)
 
   L <- hist(rf.means, main="Model Uncertainty",
-         xlab=paste("Estimated Mean Impact",outcome[2]),
-         ylab="Number of Simulations"
-         )
+            xlab=paste("Estimated Mean Impact",outcome[2]),
+            ylab="Number of Simulations")
 
   if (col.invert == FALSE) {
     clr <- ifelse(L$breaks < 0, "#F8766D", "#00BA38")[-length(L$breaks)]
@@ -889,6 +885,7 @@ geoML <- function(dta,
        xlab=paste("Estimated Mean Impact",outcome[2]),
        ylab="Number of Simulations",
        col=clr)
+
   abline(v=mean.rf.est, col="blue", lwd=2)
   #abline(v=ct.mean.est, col="red", lwd=1)
   legend("topleft", c("Random Forest Mean"),
